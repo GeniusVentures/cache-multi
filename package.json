@@ -1,5 +1,5 @@
 {
-  "name": "cache",
+  "name": "cachemulti",
   "version": "3.2.2",
   "private": true,
   "description": "Cache dependencies and build outputs",
@@ -13,14 +13,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/cache.git"
+    "url": "git+https://github.com/GeniusVenture/cachemulti.git"
   },
   "keywords": [
     "actions",
     "node",
     "cache"
   ],
-  "author": "GitHub",
+  "author": "github, SuperGNUS",
   "license": "MIT",
   "dependencies": {
     "@actions/cache": "^3.1.1",

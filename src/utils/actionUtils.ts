@@ -30,15 +30,20 @@ export function isValidEvent(): boolean {
     return RefKey in process.env && Boolean(process.env[RefKey]);
 }
 
+export function stringToArray(
+    input: string
+) : string[] {
+    return input.split("\n")
+        .map(s => s.replace(/^!\s+/, "!").trim())
+        .filter(x => x !== "");
+
+}
 export function getInputAsArray(
     name: string,
     options?: core.InputOptions
 ): string[] {
-    return core
-        .getInput(name, options)
-        .split("\n")
-        .map(s => s.replace(/^!\s+/, "!").trim())
-        .filter(x => x !== "");
+    return stringToArray(core
+        .getInput(name, options));
 }
 
 export function getInputAsInt(

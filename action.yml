@@ -1,5 +1,5 @@
 name: 'Cache-Multi'
-description: 'Cache artifacts like dependencies and build outputs to improve workflow execution time, restore multiple caches asynchronously'
+description: 'Cache artifacts and restore multiple dependencies or builds  to improve workflow execution time'
 author: 'GitHub/SuperGNUS'
 inputs:
   path:

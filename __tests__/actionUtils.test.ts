@@ -4,6 +4,7 @@ import * as core from "@actions/core";
 import { Events, RefKey } from "../src/constants";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
+import {arrayOfArrayToString} from "../src/utils/actionUtils";
 
 jest.mock("@actions/core");
 jest.mock("@actions/cache");
@@ -169,9 +170,14 @@ test("getInputAsInt returns undefined if input is invalid or NaN", () => {
 });
 
 test("getInputAsInt throws if required and value missing", () => {
-    expect(() =>
+    expect( () =>
         actionUtils.getInputAsInt("undefined", { required: true })
     ).toThrowError();
+});
+
+test("arrayOfArrayToString generates good json", () => {
+    expect(actionUtils.arrayOfArrayToString([ ["hello"], ["world"]])).toEqual(
+        "[\"hello\"]\n[\"world\"]");
 });
 
 test("isCacheFeatureAvailable for ac enabled", () => {

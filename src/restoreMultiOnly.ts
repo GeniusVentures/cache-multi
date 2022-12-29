@@ -1,9 +1,8 @@
-import restoreImpl from "./restoreImpl";
-import { NullStateProvider } from "./stateProvider";
+import { NullMultiStateProvider } from "./stateProvider";
 import restoreMultiImpl from "./restoreMultiImpl";
 
 async function run(): Promise<void> {
-    await restoreMultiImpl(new NullStateProvider());
+    await restoreMultiImpl(new NullMultiStateProvider());
 }
 
 run();

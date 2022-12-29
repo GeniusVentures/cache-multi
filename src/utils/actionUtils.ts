@@ -38,11 +38,35 @@ export function stringToArray(
         .filter(x => x !== "");
 
 }
+
+export function arrayOfArrayToString(
+    input: string[][]
+) : string {
+    return input.map( arr => JSON.stringify(arr)).join('\n')
+}
+export function stringToArrayOfArray(
+    input: string
+) : string[][] {
+    return input ? input.split("\n")
+        .map(aArray => {
+            const sArray: string[] = JSON.parse(aArray);
+            return sArray.map( str => str.replace(/^!\s+/, "!").trim()).filter(x => x !== "")
+        }) : [[]];
+}
+
 export function getInputAsArray(
     name: string,
     options?: core.InputOptions
 ): string[] {
     return stringToArray(core
+        .getInput(name, options));
+}
+
+export function getInputAsArrayOfArray(
+    name: string,
+    options?: core.InputOptions
+): string[][] {
+    return stringToArrayOfArray(core
         .getInput(name, options));
 }
 

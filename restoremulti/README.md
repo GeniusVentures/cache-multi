@@ -12,9 +12,9 @@ without having to necessarily save it.  It accepts an array of inputs and iterat
 
 ## Outputs
 
-* `cache-hit` - A list of boolean valueS to indicate an exact match was found for the key. 
-* `cache-primary-key` - A list of Cache primary keyS passed in the input to use in subsequent steps of the workflow.
-* `cache-matched-key` - A list of Keys of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys.
+* `cache-hits` - A list of boolean values to indicate an exact match was found for the key. 
+* `cache-primary-keys` - A list of Cache primary keyS passed in the input to use in subsequent steps of the workflow.
+* `cache-matched-keys` - A list of Keys of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys.
 
 > **Note**
 `cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.

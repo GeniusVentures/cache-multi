@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 
-import { Outputs, State } from "./constants";
+import {MultiOutputs, Outputs, State} from "./constants";
 
 export interface IStateProvider {
     setState(key: string, value: string): void;
@@ -32,6 +32,20 @@ export class StateProvider extends StateProviderBase {
     getState = core.getState;
 }
 
+
+export class NullMultiStateProvider extends StateProviderBase {
+    stateToOutputMap = new Map<string, string>([
+        [State.CacheMatchedKey, MultiOutputs.CacheMatchedKeys],
+        [State.CachePrimaryKey, MultiOutputs.CachePrimaryKeys]
+    ]);
+
+    setState = (key: string, value: string) => {
+        core.setOutput(this.stateToOutputMap.get(key) as string, value);
+    };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getState = (key: string) => "";
+}
+
 export class NullStateProvider extends StateProviderBase {
     stateToOutputMap = new Map<string, string>([
         [State.CacheMatchedKey, Outputs.CacheMatchedKey],
@@ -44,3 +58,4 @@ export class NullStateProvider extends StateProviderBase {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getState = (key: string) => "";
 }
+

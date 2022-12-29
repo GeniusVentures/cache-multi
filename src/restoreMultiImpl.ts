@@ -1,17 +1,17 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
-import {Events, Inputs, MultiInputs, MultiOutputs, MultiState, Outputs, State} from "./constants";
+import {Events, MultiInputs, MultiOutputs, MultiState, Outputs, State} from "./constants";
 import { IStateProvider } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
-import {stringToArray} from "./utils/actionUtils";
+import { stringToArray } from "./utils/actionUtils";
 
 async function restoreMultiImpl(
     stateProvider: IStateProvider
-): Promise<string | undefined> {
+): Promise<string[] | undefined> {
     try {
         if (!utils.isCacheFeatureAvailable()) {
-            core.setOutput(Outputs.CacheHit, "false");
+            core.setOutput(MultiOutputs.CacheHits, "false");
             return;
         }
 
@@ -26,18 +26,18 @@ async function restoreMultiImpl(
         }
 
         const primaryKeys = core.getInput(MultiInputs.Keys, { required: true });
-        stateProvider.setState(MultiState.CachePrimaryKeys, primaryKeys);
+        stateProvider.setState(State.CachePrimaryKey, primaryKeys);
 
         const multiPrimaryKeys = stringToArray(primaryKeys);
-        const multiRestoreKeys = utils.getInputAsArray(MultiInputs.RestoreKeys);
-        const multiCachePaths = utils.getInputAsArray(MultiInputs.Paths, {
+        const multiRestoreKeys = utils.getInputAsArrayOfArray(MultiInputs.RestoreKeys);
+        const multiCachePaths = utils.getInputAsArrayOfArray(MultiInputs.Paths, {
             required: true
         });
 
         const rcPromises: Array<Promise<string | undefined>> = new Array<Promise<string | undefined>>();
         multiPrimaryKeys.map( (primaryKey, index) => {
-            const cachePaths: string[] = multiCachePaths.length > index ? stringToArray(multiCachePaths[index]) : [];
-            const restoreKeys: string[] = (multiRestoreKeys.length > index) ? stringToArray(multiRestoreKeys[index]) : [];
+            const cachePaths: string[] = (multiCachePaths.length > index) ? multiCachePaths[index] : [];
+            const restoreKeys: string[] = (multiRestoreKeys.length > index) ? multiRestoreKeys[index] : [];
             rcPromises.push(cache.restoreCache(
                 cachePaths,
                 primaryKey,
@@ -45,33 +45,39 @@ async function restoreMultiImpl(
             ));
         });
 
-        Promise.all<string | undefined>(rcPromises).then( cacheKeys => {
+        await Promise.all<string | undefined>(rcPromises).then( cacheKeys => {
             const isExactKeyMatches: Array<boolean> = new Array<boolean>();
+            let allSucceeded = true;
             cacheKeys.map( (cacheKey, index) => {
                 if (!cacheKey) {
+                    const mResKeys = (multiRestoreKeys.length > index) ? multiRestoreKeys[index] : [];
                     core.info(
                         `Cache not found for input keys: ${[
-                            primaryKeys[index],
-                            ...multiRestoreKeys[index]
+                            multiPrimaryKeys[index],
+                            ...mResKeys
                         ].join(", ")}`
                     );
 
-                    return;
+                    allSucceeded = false;
+                } else {
+                    isExactKeyMatches.push(utils.isExactKeyMatch(
+                        multiPrimaryKeys[index],
+                        cacheKey
+                    ));
                 }
+            });
 
-                isExactKeyMatches.push(utils.isExactKeyMatch(
-                    primaryKeys[index],
-                    cacheKey
-                ));
-            })
+            if (!allSucceeded) {
+                return;
+            }
 
             const cacheKeysString = cacheKeys.join('\n');
             // Store the matched cache key in states
-            stateProvider.setState(MultiState.CacheMatchedKeys, cacheKeysString);
+            stateProvider.setState(State.CacheMatchedKey, cacheKeysString);
 
             core.setOutput(MultiOutputs.CacheHits, isExactKeyMatches.join('\n'));
             core.info(`Cache(s) restored from keys: \n${cacheKeysString}`);
-            return cacheKeysString;
+            return cacheKeys;
         });
 
     } catch (error: unknown) {

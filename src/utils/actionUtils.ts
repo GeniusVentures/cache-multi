@@ -50,7 +50,7 @@ export function stringToArrayOfArray(
     return input ? input.split("\n")
         .map(aArray => {
             const sArray: string[] = JSON.parse(aArray);
-            return sArray.map( str => str.replace(/^!\s+/, "!").trim()).filter(x => x !== "")
+            return (Array.isArray(sArray)) ? sArray.map( str => str.replace(/^!\s+/, "!").trim()).filter(x => x !== "") : [];
         }) : [[]];
 }
 

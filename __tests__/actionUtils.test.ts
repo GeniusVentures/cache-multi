@@ -180,6 +180,21 @@ test("arrayOfArrayToString generates good json", () => {
         "[\"hello\"]\n[\"world\"]");
 });
 
+test("arrayOfArrayToString generates good json with one array", () => {
+    expect(actionUtils.arrayOfArrayToString([ ["hello"]])).toEqual(
+        "[\"hello\"]");
+});
+
+test("stringToArrayOfArray generates Array of Array Objects", () => {
+    expect(actionUtils.stringToArrayOfArray("[\"hello\"]")).toEqual(
+        [ ["hello"]]);
+});
+
+test("stringToArrayOfArray generates empty array", () => {
+    expect(actionUtils.stringToArrayOfArray("878787")).toEqual(
+        [[]]);
+});
+
 test("isCacheFeatureAvailable for ac enabled", () => {
     jest.spyOn(cache, "isFeatureAvailable").mockImplementation(() => true);
 

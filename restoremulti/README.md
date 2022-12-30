@@ -17,7 +17,7 @@ without having to necessarily save it.  It accepts an array of inputs and iterat
 * `cache-matched-keys` - A list of Keys of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys.
 
 > **Note**
-`cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
+`cache-hits` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
 
 ### Environment Variables
 * `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](https://github.com/actions/cache/blob/main/workarounds.md#cache-segment-restore-timeout)
@@ -34,11 +34,15 @@ In case you are using another workflow to create and save your cache that can be
 steps:
   - uses: actions/checkout@v3
 
-  - uses: actions/cache/restoremulti@v3
+  - uses: actions/cache-multi/restore-multi@v3.2.2
     id: cache
     with:
-      paths: [ path/to/dependencies, path/to/dependencies2]
-      keys: [${{ runner.os }}-${{ hashFiles('**/lockfiles') }}, ${{ runner.os }}-${{ hashFiles('**/lockfiles-2') }} ]
+      paths: |
+        "[ \"path/to/dependencies\", \"path/to/dependencies2\"]"
+        "[ \"path/to/dependencies\", \"path/to/dependencies2\"]"
+      keys: |
+        ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}, ${{ runner.os }}-${{ hashFiles('**/lockfiles-2') }}
+        ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}, ${{ runner.os }}-${{ hashFiles('**/lockfiles-2') }}
 
   - name: Install Dependencies
     if: steps.cache.outputs.cache-hit != 'true'
@@ -60,7 +64,7 @@ In case of multi-module projects, where the built artifact of one project needs 
 
 #### Using restore action outputs to make save action behave just like the cache action
 
-The outputs `cache-primary-key` and `cache-matched-key` can be used to check if the restored cache is same as the given primary key. Alternatively, the `cache-hit` output can also be used to check if the restored was a complete match or a partially restored cache.
+The outputs `cache-primary-keys` and `cache-matched-keys` can be used to check if the restored cache(s) are same as the given primary key. Alternatively, the `cache-hits` output(s) can also be used to check if the restored was a complete match or a partially restored cache.
 
 #### Ensuring proper restores and save happen across the actions
 

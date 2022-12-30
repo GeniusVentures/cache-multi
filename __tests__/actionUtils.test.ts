@@ -190,9 +190,9 @@ test("stringToArrayOfArray generates Array of Array Objects", () => {
         [ ["hello"]]);
 });
 
-test("stringToArrayOfArray generates empty array", () => {
-    expect(actionUtils.stringToArrayOfArray("878787")).toEqual(
-        [[]]);
+test("stringToArrayOfArray generates correct string", () => {
+    expect(actionUtils.stringToArrayOfArray("[ \"!.git/**\", \"Boost.DI/**\" ]")).toEqual(
+        [["!.git/**", "Boost.DI/**"]]);
 });
 
 test("isCacheFeatureAvailable for ac enabled", () => {

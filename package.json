@@ -1,11 +1,11 @@
 {
-  "name": "cachemulti",
+  "name": "cache-multi",
   "version": "3.2.2",
   "private": true,
   "description": "Cache dependencies and build outputs",
   "main": "dist/restore/index.js",
   "scripts": {
-    "build": "tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && ncc build -o dist/restore-only src/restoreOnly.ts && ncc build -o dist/save-only src/saveOnly.ts",
+    "build": "tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && ncc build -o dist/restore-only src/restoreOnly.ts && ncc build -o dist/save-only src/saveOnly.ts && ncc build -o dist/restoremulti-only src/restoreMultiOnly.ts",
     "test": "tsc --noEmit && jest --coverage",
     "lint": "eslint **/*.ts --cache",
     "format": "prettier --write **/*.ts",
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GeniusVenture/cachemulti.git"
+    "url": "git+https://github.com/GeniusVenture/cache-multi.git"
   },
   "keywords": [
     "actions",

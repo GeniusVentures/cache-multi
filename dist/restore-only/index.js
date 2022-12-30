@@ -4964,7 +4964,7 @@ exports.checkBypass = checkBypass;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
+exports.RefKey = exports.Events = exports.MultiState = exports.State = exports.MultiOutputs = exports.Outputs = exports.MultiInputs = exports.Inputs = void 0;
 var Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
@@ -4972,17 +4972,35 @@ var Inputs;
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size"; // Input for cache, save action
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
+var MultiInputs;
+(function (MultiInputs) {
+    MultiInputs["Keys"] = "keys";
+    MultiInputs["Paths"] = "paths";
+    MultiInputs["RestoreKeys"] = "restore-keys";
+    MultiInputs["UploadChunkSize"] = "upload-chunk-size"; // Input for cache, save action
+})(MultiInputs = exports.MultiInputs || (exports.MultiInputs = {}));
 var Outputs;
 (function (Outputs) {
     Outputs["CacheHit"] = "cache-hit";
     Outputs["CachePrimaryKey"] = "cache-primary-key";
     Outputs["CacheMatchedKey"] = "cache-matched-key"; // Output from restore action
 })(Outputs = exports.Outputs || (exports.Outputs = {}));
+var MultiOutputs;
+(function (MultiOutputs) {
+    MultiOutputs["CacheHits"] = "cache-hits";
+    MultiOutputs["CachePrimaryKeys"] = "cache-primary-keys";
+    MultiOutputs["CacheMatchedKeys"] = "cache-matched-keys"; // Output from restore action
+})(MultiOutputs = exports.MultiOutputs || (exports.MultiOutputs = {}));
 var State;
 (function (State) {
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
 })(State = exports.State || (exports.State = {}));
+var MultiState;
+(function (MultiState) {
+    MultiState["CachePrimaryKeys"] = "CACHE_KEYS";
+    MultiState["CacheMatchedKeys"] = "CACHE_RESULTS";
+})(MultiState = exports.MultiState || (exports.MultiState = {}));
 var Events;
 (function (Events) {
     Events["Key"] = "GITHUB_EVENT_NAME";
@@ -9375,7 +9393,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.NullStateProvider = exports.StateProvider = void 0;
+exports.NullStateProvider = exports.NullMultiStateProvider = exports.StateProvider = void 0;
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
 class StateProviderBase {
@@ -9402,6 +9420,21 @@ class StateProvider extends StateProviderBase {
     }
 }
 exports.StateProvider = StateProvider;
+class NullMultiStateProvider extends StateProviderBase {
+    constructor() {
+        super(...arguments);
+        this.stateToOutputMap = new Map([
+            [constants_1.State.CacheMatchedKey, constants_1.MultiOutputs.CacheMatchedKeys],
+            [constants_1.State.CachePrimaryKey, constants_1.MultiOutputs.CachePrimaryKeys]
+        ]);
+        this.setState = (key, value) => {
+            core.setOutput(this.stateToOutputMap.get(key), value);
+        };
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        this.getState = (key) => "";
+    }
+}
+exports.NullMultiStateProvider = NullMultiStateProvider;
 class NullStateProvider extends StateProviderBase {
     constructor() {
         super(...arguments);
@@ -10066,7 +10099,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.isExactKeyMatch = exports.isGhes = void 0;
+exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArrayOfArray = exports.getInputAsArray = exports.stringToArrayOfArray = exports.arrayOfArrayToString = exports.stringToArray = exports.isValidEvent = exports.logWarning = exports.isExactKeyMatch = exports.isGhes = void 0;
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
@@ -10093,14 +10126,34 @@ function isValidEvent() {
     return constants_1.RefKey in process.env && Boolean(process.env[constants_1.RefKey]);
 }
 exports.isValidEvent = isValidEvent;
-function getInputAsArray(name, options) {
-    return core
-        .getInput(name, options)
-        .split("\n")
+function stringToArray(input) {
+    return input.split("\n")
         .map(s => s.replace(/^!\s+/, "!").trim())
         .filter(x => x !== "");
 }
+exports.stringToArray = stringToArray;
+function arrayOfArrayToString(input) {
+    return input.map(arr => JSON.stringify(arr)).join('\n');
+}
+exports.arrayOfArrayToString = arrayOfArrayToString;
+function stringToArrayOfArray(input) {
+    return input ? input.split("\n")
+        .map(aArray => {
+        const sArray = JSON.parse(aArray);
+        return sArray.map(str => str.replace(/^!\s+/, "!").trim()).filter(x => x !== "");
+    }) : [[]];
+}
+exports.stringToArrayOfArray = stringToArrayOfArray;
+function getInputAsArray(name, options) {
+    return stringToArray(core
+        .getInput(name, options));
+}
 exports.getInputAsArray = getInputAsArray;
+function getInputAsArrayOfArray(name, options) {
+    return stringToArrayOfArray(core
+        .getInput(name, options));
+}
+exports.getInputAsArrayOfArray = getInputAsArrayOfArray;
 function getInputAsInt(name, options) {
     const value = parseInt(core.getInput(name, options));
     if (isNaN(value) || value < 0) {

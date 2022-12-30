@@ -34,7 +34,7 @@ module.exports =
 /******/ 	// the startup function
 /******/ 	function startup() {
 /******/ 		// Load entry module and return exports
-/******/ 		return __webpack_require__(681);
+/******/ 		return __webpack_require__(777);
 /******/ 	};
 /******/
 /******/ 	// run startup
@@ -1582,7 +1582,232 @@ exports.parseURL = __webpack_require__(936).parseURL;
 
 /***/ }),
 /* 71 */,
-/* 72 */,
+/* 72 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+var api = __webpack_require__(440);
+
+// Copyright (c) Microsoft Corporation.
+(function (SpanKind) {
+    /** Default value. Indicates that the span is used internally. */
+    SpanKind[SpanKind["INTERNAL"] = 0] = "INTERNAL";
+    /**
+     * Indicates that the span covers server-side handling of an RPC or other
+     * remote request.
+     */
+    SpanKind[SpanKind["SERVER"] = 1] = "SERVER";
+    /**
+     * Indicates that the span covers the client-side wrapper around an RPC or
+     * other remote request.
+     */
+    SpanKind[SpanKind["CLIENT"] = 2] = "CLIENT";
+    /**
+     * Indicates that the span describes producer sending a message to a
+     * broker. Unlike client and server, there is no direct critical path latency
+     * relationship between producer and consumer spans.
+     */
+    SpanKind[SpanKind["PRODUCER"] = 3] = "PRODUCER";
+    /**
+     * Indicates that the span describes consumer receiving a message from a
+     * broker. Unlike client and server, there is no direct critical path latency
+     * relationship between producer and consumer spans.
+     */
+    SpanKind[SpanKind["CONSUMER"] = 4] = "CONSUMER";
+})(exports.SpanKind || (exports.SpanKind = {}));
+/**
+ * Return the span if one exists
+ *
+ * @param context - context to get span from
+ */
+function getSpan(context) {
+    return api.trace.getSpan(context);
+}
+/**
+ * Set the span on a context
+ *
+ * @param context - context to use as parent
+ * @param span - span to set active
+ */
+function setSpan(context, span) {
+    return api.trace.setSpan(context, span);
+}
+/**
+ * Wrap span context in a NoopSpan and set as span in a new
+ * context
+ *
+ * @param context - context to set active span on
+ * @param spanContext - span context to be wrapped
+ */
+function setSpanContext(context, spanContext) {
+    return api.trace.setSpanContext(context, spanContext);
+}
+/**
+ * Get the span context of the span if it exists.
+ *
+ * @param context - context to get values from
+ */
+function getSpanContext(context) {
+    return api.trace.getSpanContext(context);
+}
+/**
+ * Returns true of the given {@link SpanContext} is valid.
+ * A valid {@link SpanContext} is one which has a valid trace ID and span ID as per the spec.
+ *
+ * @param context - the {@link SpanContext} to validate.
+ *
+ * @returns true if the {@link SpanContext} is valid, false otherwise.
+ */
+function isSpanContextValid(context) {
+    return api.trace.isSpanContextValid(context);
+}
+function getTracer(name, version) {
+    return api.trace.getTracer(name || "azure/core-tracing", version);
+}
+/** Entrypoint for context API */
+const context = api.context;
+(function (SpanStatusCode) {
+    /**
+     * The default status.
+     */
+    SpanStatusCode[SpanStatusCode["UNSET"] = 0] = "UNSET";
+    /**
+     * The operation has been validated by an Application developer or
+     * Operator to have completed successfully.
+     */
+    SpanStatusCode[SpanStatusCode["OK"] = 1] = "OK";
+    /**
+     * The operation contains an error.
+     */
+    SpanStatusCode[SpanStatusCode["ERROR"] = 2] = "ERROR";
+})(exports.SpanStatusCode || (exports.SpanStatusCode = {}));
+
+// Copyright (c) Microsoft Corporation.
+function isTracingDisabled() {
+    var _a;
+    if (typeof process === "undefined") {
+        // not supported in browser for now without polyfills
+        return false;
+    }
+    const azureTracingDisabledValue = (_a = process.env.AZURE_TRACING_DISABLED) === null || _a === void 0 ? void 0 : _a.toLowerCase();
+    if (azureTracingDisabledValue === "false" || azureTracingDisabledValue === "0") {
+        return false;
+    }
+    return Boolean(azureTracingDisabledValue);
+}
+/**
+ * Creates a function that can be used to create spans using the global tracer.
+ *
+ * Usage:
+ *
+ * ```typescript
+ * // once
+ * const createSpan = createSpanFunction({ packagePrefix: "Azure.Data.AppConfiguration", namespace: "Microsoft.AppConfiguration" });
+ *
+ * // in each operation
+ * const span = createSpan("deleteConfigurationSetting", operationOptions);
+ *    // code...
+ * span.end();
+ * ```
+ *
+ * @hidden
+ * @param args - allows configuration of the prefix for each span as well as the az.namespace field.
+ */
+function createSpanFunction(args) {
+    return function (operationName, operationOptions) {
+        const tracer = getTracer();
+        const tracingOptions = (operationOptions === null || operationOptions === void 0 ? void 0 : operationOptions.tracingOptions) || {};
+        const spanOptions = Object.assign({ kind: exports.SpanKind.INTERNAL }, tracingOptions.spanOptions);
+        const spanName = args.packagePrefix ? `${args.packagePrefix}.${operationName}` : operationName;
+        let span;
+        if (isTracingDisabled()) {
+            span = api.trace.wrapSpanContext(api.INVALID_SPAN_CONTEXT);
+        }
+        else {
+            span = tracer.startSpan(spanName, spanOptions, tracingOptions.tracingContext);
+        }
+        if (args.namespace) {
+            span.setAttribute("az.namespace", args.namespace);
+        }
+        let newSpanOptions = tracingOptions.spanOptions || {};
+        if (span.isRecording() && args.namespace) {
+            newSpanOptions = Object.assign(Object.assign({}, tracingOptions.spanOptions), { attributes: Object.assign(Object.assign({}, spanOptions.attributes), { "az.namespace": args.namespace }) });
+        }
+        const newTracingOptions = Object.assign(Object.assign({}, tracingOptions), { spanOptions: newSpanOptions, tracingContext: setSpan(tracingOptions.tracingContext || context.active(), span) });
+        const newOperationOptions = Object.assign(Object.assign({}, operationOptions), { tracingOptions: newTracingOptions });
+        return {
+            span,
+            updatedOptions: newOperationOptions
+        };
+    };
+}
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+const VERSION = "00";
+/**
+ * Generates a `SpanContext` given a `traceparent` header value.
+ * @param traceParent - Serialized span context data as a `traceparent` header value.
+ * @returns The `SpanContext` generated from the `traceparent` value.
+ */
+function extractSpanContextFromTraceParentHeader(traceParentHeader) {
+    const parts = traceParentHeader.split("-");
+    if (parts.length !== 4) {
+        return;
+    }
+    const [version, traceId, spanId, traceOptions] = parts;
+    if (version !== VERSION) {
+        return;
+    }
+    const traceFlags = parseInt(traceOptions, 16);
+    const spanContext = {
+        spanId,
+        traceId,
+        traceFlags
+    };
+    return spanContext;
+}
+/**
+ * Generates a `traceparent` value given a span context.
+ * @param spanContext - Contains context for a specific span.
+ * @returns The `spanContext` represented as a `traceparent` value.
+ */
+function getTraceParentHeader(spanContext) {
+    const missingFields = [];
+    if (!spanContext.traceId) {
+        missingFields.push("traceId");
+    }
+    if (!spanContext.spanId) {
+        missingFields.push("spanId");
+    }
+    if (missingFields.length) {
+        return;
+    }
+    const flags = spanContext.traceFlags || 0 /* NONE */;
+    const hexFlags = flags.toString(16);
+    const traceFlags = hexFlags.length === 1 ? `0${hexFlags}` : hexFlags;
+    // https://www.w3.org/TR/trace-context/#traceparent-header-field-values
+    return `${VERSION}-${spanContext.traceId}-${spanContext.spanId}-${traceFlags}`;
+}
+
+exports.context = context;
+exports.createSpanFunction = createSpanFunction;
+exports.extractSpanContextFromTraceParentHeader = extractSpanContextFromTraceParentHeader;
+exports.getSpan = getSpan;
+exports.getSpanContext = getSpanContext;
+exports.getTraceParentHeader = getTraceParentHeader;
+exports.getTracer = getTracer;
+exports.isSpanContextValid = isSpanContextValid;
+exports.setSpan = setSpan;
+exports.setSpanContext = setSpanContext;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
 /* 73 */,
 /* 74 */,
 /* 75 */,
@@ -3701,7 +3926,30 @@ exports.DiagAPI = DiagAPI;
 /* 121 */,
 /* 122 */,
 /* 123 */,
-/* 124 */,
+/* 124 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+//# sourceMappingURL=tracer_provider.js.map
+
+/***/ }),
 /* 125 */,
 /* 126 */,
 /* 127 */,
@@ -4958,59 +5206,7 @@ exports.checkBypass = checkBypass;
 /* 193 */,
 /* 194 */,
 /* 195 */,
-/* 196 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.RefKey = exports.Events = exports.MultiState = exports.State = exports.MultiOutputs = exports.Outputs = exports.MultiInputs = exports.Inputs = void 0;
-var Inputs;
-(function (Inputs) {
-    Inputs["Key"] = "key";
-    Inputs["Path"] = "path";
-    Inputs["RestoreKeys"] = "restore-keys";
-    Inputs["UploadChunkSize"] = "upload-chunk-size"; // Input for cache, save action
-})(Inputs = exports.Inputs || (exports.Inputs = {}));
-var MultiInputs;
-(function (MultiInputs) {
-    MultiInputs["Keys"] = "keys";
-    MultiInputs["Paths"] = "paths";
-    MultiInputs["RestoreKeys"] = "restore-keys";
-    MultiInputs["UploadChunkSize"] = "upload-chunk-size"; // Input for cache, save action
-})(MultiInputs = exports.MultiInputs || (exports.MultiInputs = {}));
-var Outputs;
-(function (Outputs) {
-    Outputs["CacheHit"] = "cache-hit";
-    Outputs["CachePrimaryKey"] = "cache-primary-key";
-    Outputs["CacheMatchedKey"] = "cache-matched-key"; // Output from restore action
-})(Outputs = exports.Outputs || (exports.Outputs = {}));
-var MultiOutputs;
-(function (MultiOutputs) {
-    MultiOutputs["CacheHits"] = "cache-hits";
-    MultiOutputs["CachePrimaryKeys"] = "cache-primary-keys";
-    MultiOutputs["CacheMatchedKeys"] = "cache-matched-keys"; // Output from restore action
-})(MultiOutputs = exports.MultiOutputs || (exports.MultiOutputs = {}));
-var State;
-(function (State) {
-    State["CachePrimaryKey"] = "CACHE_KEY";
-    State["CacheMatchedKey"] = "CACHE_RESULT";
-})(State = exports.State || (exports.State = {}));
-var MultiState;
-(function (MultiState) {
-    MultiState["CachePrimaryKeys"] = "CACHE_KEYS";
-    MultiState["CacheMatchedKeys"] = "CACHE_RESULTS";
-})(MultiState = exports.MultiState || (exports.MultiState = {}));
-var Events;
-(function (Events) {
-    Events["Key"] = "GITHUB_EVENT_NAME";
-    Events["Push"] = "push";
-    Events["PullRequest"] = "pull_request";
-})(Events = exports.Events || (exports.Events = {}));
-exports.RefKey = "GITHUB_REF";
-
-
-/***/ }),
+/* 196 */,
 /* 197 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -6919,224 +7115,102 @@ exports.implementation = class URLImpl {
 
 "use strict";
 
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-var api = __webpack_require__(440);
-
-// Copyright (c) Microsoft Corporation.
-(function (SpanKind) {
-    /** Default value. Indicates that the span is used internally. */
-    SpanKind[SpanKind["INTERNAL"] = 0] = "INTERNAL";
-    /**
-     * Indicates that the span covers server-side handling of an RPC or other
-     * remote request.
-     */
-    SpanKind[SpanKind["SERVER"] = 1] = "SERVER";
-    /**
-     * Indicates that the span covers the client-side wrapper around an RPC or
-     * other remote request.
-     */
-    SpanKind[SpanKind["CLIENT"] = 2] = "CLIENT";
-    /**
-     * Indicates that the span describes producer sending a message to a
-     * broker. Unlike client and server, there is no direct critical path latency
-     * relationship between producer and consumer spans.
-     */
-    SpanKind[SpanKind["PRODUCER"] = 3] = "PRODUCER";
-    /**
-     * Indicates that the span describes consumer receiving a message from a
-     * broker. Unlike client and server, there is no direct critical path latency
-     * relationship between producer and consumer spans.
-     */
-    SpanKind[SpanKind["CONSUMER"] = 4] = "CONSUMER";
-})(exports.SpanKind || (exports.SpanKind = {}));
-/**
- * Return the span if one exists
- *
- * @param context - context to get span from
- */
-function getSpan(context) {
-    return api.trace.getSpan(context);
-}
-/**
- * Set the span on a context
- *
- * @param context - context to use as parent
- * @param span - span to set active
- */
-function setSpan(context, span) {
-    return api.trace.setSpan(context, span);
-}
-/**
- * Wrap span context in a NoopSpan and set as span in a new
- * context
- *
- * @param context - context to set active span on
- * @param spanContext - span context to be wrapped
- */
-function setSpanContext(context, spanContext) {
-    return api.trace.setSpanContext(context, spanContext);
-}
-/**
- * Get the span context of the span if it exists.
- *
- * @param context - context to get values from
- */
-function getSpanContext(context) {
-    return api.trace.getSpanContext(context);
-}
-/**
- * Returns true of the given {@link SpanContext} is valid.
- * A valid {@link SpanContext} is one which has a valid trace ID and span ID as per the spec.
- *
- * @param context - the {@link SpanContext} to validate.
- *
- * @returns true if the {@link SpanContext} is valid, false otherwise.
- */
-function isSpanContextValid(context) {
-    return api.trace.isSpanContextValid(context);
-}
-function getTracer(name, version) {
-    return api.trace.getTracer(name || "azure/core-tracing", version);
-}
-/** Entrypoint for context API */
-const context = api.context;
-(function (SpanStatusCode) {
-    /**
-     * The default status.
-     */
-    SpanStatusCode[SpanStatusCode["UNSET"] = 0] = "UNSET";
-    /**
-     * The operation has been validated by an Application developer or
-     * Operator to have completed successfully.
-     */
-    SpanStatusCode[SpanStatusCode["OK"] = 1] = "OK";
-    /**
-     * The operation contains an error.
-     */
-    SpanStatusCode[SpanStatusCode["ERROR"] = 2] = "ERROR";
-})(exports.SpanStatusCode || (exports.SpanStatusCode = {}));
-
-// Copyright (c) Microsoft Corporation.
-function isTracingDisabled() {
-    var _a;
-    if (typeof process === "undefined") {
-        // not supported in browser for now without polyfills
-        return false;
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
     }
-    const azureTracingDisabledValue = (_a = process.env.AZURE_TRACING_DISABLED) === null || _a === void 0 ? void 0 : _a.toLowerCase();
-    if (azureTracingDisabledValue === "false" || azureTracingDisabledValue === "0") {
-        return false;
-    }
-    return Boolean(azureTracingDisabledValue);
-}
-/**
- * Creates a function that can be used to create spans using the global tracer.
- *
- * Usage:
- *
- * ```typescript
- * // once
- * const createSpan = createSpanFunction({ packagePrefix: "Azure.Data.AppConfiguration", namespace: "Microsoft.AppConfiguration" });
- *
- * // in each operation
- * const span = createSpan("deleteConfigurationSetting", operationOptions);
- *    // code...
- * span.end();
- * ```
- *
- * @hidden
- * @param args - allows configuration of the prefix for each span as well as the az.namespace field.
- */
-function createSpanFunction(args) {
-    return function (operationName, operationOptions) {
-        const tracer = getTracer();
-        const tracingOptions = (operationOptions === null || operationOptions === void 0 ? void 0 : operationOptions.tracingOptions) || {};
-        const spanOptions = Object.assign({ kind: exports.SpanKind.INTERNAL }, tracingOptions.spanOptions);
-        const spanName = args.packagePrefix ? `${args.packagePrefix}.${operationName}` : operationName;
-        let span;
-        if (isTracingDisabled()) {
-            span = api.trace.wrapSpanContext(api.INVALID_SPAN_CONTEXT);
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const cache = __importStar(__webpack_require__(692));
+const core = __importStar(__webpack_require__(470));
+const constants_1 = __webpack_require__(694);
+const utils = __importStar(__webpack_require__(443));
+const actionUtils_1 = __webpack_require__(443);
+function restoreMultiImpl(stateProvider) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            if (!utils.isCacheFeatureAvailable()) {
+                core.setOutput(constants_1.MultiOutputs.CacheHits, "false");
+                return;
+            }
+            // Validate inputs, this can cause task failure
+            if (!utils.isValidEvent()) {
+                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
+                return;
+            }
+            const primaryKeys = core.getInput(constants_1.MultiInputs.Keys, { required: true });
+            stateProvider.setState(constants_1.State.CachePrimaryKey, primaryKeys);
+            const multiPrimaryKeys = (0, actionUtils_1.stringToArray)(primaryKeys);
+            const multiRestoreKeys = utils.getInputAsArrayOfArray(constants_1.MultiInputs.RestoreKeys);
+            const multiCachePaths = utils.getInputAsArrayOfArray(constants_1.MultiInputs.Paths, {
+                required: true
+            });
+            const rcPromises = new Array();
+            multiPrimaryKeys.map((primaryKey, index) => {
+                const cachePaths = (multiCachePaths.length > index) ? multiCachePaths[index] : [];
+                const restoreKeys = (multiRestoreKeys.length > index) ? multiRestoreKeys[index] : [];
+                rcPromises.push(cache.restoreCache(cachePaths, primaryKey, restoreKeys));
+            });
+            yield Promise.all(rcPromises).then(cacheKeys => {
+                const isExactKeyMatches = new Array();
+                let allSucceeded = true;
+                cacheKeys.map((cacheKey, index) => {
+                    if (!cacheKey) {
+                        const mResKeys = (multiRestoreKeys.length > index) ? multiRestoreKeys[index] : [];
+                        core.info(`Cache not found for input keys: ${[
+                            multiPrimaryKeys[index],
+                            ...mResKeys
+                        ].join(", ")}`);
+                        allSucceeded = false;
+                    }
+                    else {
+                        isExactKeyMatches.push(utils.isExactKeyMatch(multiPrimaryKeys[index], cacheKey));
+                    }
+                });
+                if (!allSucceeded) {
+                    return;
+                }
+                const cacheKeysString = cacheKeys.join('\n');
+                // Store the matched cache key in states
+                stateProvider.setState(constants_1.State.CacheMatchedKey, cacheKeysString);
+                core.setOutput(constants_1.MultiOutputs.CacheHits, isExactKeyMatches.join('\n'));
+                core.info(`Cache(s) restored from keys: \n${cacheKeysString}`);
+                return cacheKeys;
+            });
         }
-        else {
-            span = tracer.startSpan(spanName, spanOptions, tracingOptions.tracingContext);
+        catch (error) {
+            core.setFailed(error.message);
         }
-        if (args.namespace) {
-            span.setAttribute("az.namespace", args.namespace);
-        }
-        let newSpanOptions = tracingOptions.spanOptions || {};
-        if (span.isRecording() && args.namespace) {
-            newSpanOptions = Object.assign(Object.assign({}, tracingOptions.spanOptions), { attributes: Object.assign(Object.assign({}, spanOptions.attributes), { "az.namespace": args.namespace }) });
-        }
-        const newTracingOptions = Object.assign(Object.assign({}, tracingOptions), { spanOptions: newSpanOptions, tracingContext: setSpan(tracingOptions.tracingContext || context.active(), span) });
-        const newOperationOptions = Object.assign(Object.assign({}, operationOptions), { tracingOptions: newTracingOptions });
-        return {
-            span,
-            updatedOptions: newOperationOptions
-        };
-    };
+    });
 }
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-const VERSION = "00";
-/**
- * Generates a `SpanContext` given a `traceparent` header value.
- * @param traceParent - Serialized span context data as a `traceparent` header value.
- * @returns The `SpanContext` generated from the `traceparent` value.
- */
-function extractSpanContextFromTraceParentHeader(traceParentHeader) {
-    const parts = traceParentHeader.split("-");
-    if (parts.length !== 4) {
-        return;
-    }
-    const [version, traceId, spanId, traceOptions] = parts;
-    if (version !== VERSION) {
-        return;
-    }
-    const traceFlags = parseInt(traceOptions, 16);
-    const spanContext = {
-        spanId,
-        traceId,
-        traceFlags
-    };
-    return spanContext;
-}
-/**
- * Generates a `traceparent` value given a span context.
- * @param spanContext - Contains context for a specific span.
- * @returns The `spanContext` represented as a `traceparent` value.
- */
-function getTraceParentHeader(spanContext) {
-    const missingFields = [];
-    if (!spanContext.traceId) {
-        missingFields.push("traceId");
-    }
-    if (!spanContext.spanId) {
-        missingFields.push("spanId");
-    }
-    if (missingFields.length) {
-        return;
-    }
-    const flags = spanContext.traceFlags || 0 /* NONE */;
-    const hexFlags = flags.toString(16);
-    const traceFlags = hexFlags.length === 1 ? `0${hexFlags}` : hexFlags;
-    // https://www.w3.org/TR/trace-context/#traceparent-header-field-values
-    return `${VERSION}-${spanContext.traceId}-${spanContext.spanId}-${traceFlags}`;
-}
-
-exports.context = context;
-exports.createSpanFunction = createSpanFunction;
-exports.extractSpanContextFromTraceParentHeader = extractSpanContextFromTraceParentHeader;
-exports.getSpan = getSpan;
-exports.getSpanContext = getSpanContext;
-exports.getTraceParentHeader = getTraceParentHeader;
-exports.getTracer = getTracer;
-exports.isSpanContextValid = isSpanContextValid;
-exports.setSpan = setSpan;
-exports.setSpanContext = setSpanContext;
-//# sourceMappingURL=index.js.map
+exports.default = restoreMultiImpl;
 
 
 /***/ }),
@@ -9364,95 +9438,7 @@ function expand(str, isTop) {
 /***/ }),
 /* 307 */,
 /* 308 */,
-/* 309 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.NullStateProvider = exports.NullMultiStateProvider = exports.StateProvider = void 0;
-const core = __importStar(__webpack_require__(470));
-const constants_1 = __webpack_require__(196);
-class StateProviderBase {
-    constructor() {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-        this.setState = (key, value) => { };
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        this.getState = (key) => "";
-    }
-    getCacheState() {
-        const cacheKey = this.getState(constants_1.State.CacheMatchedKey);
-        if (cacheKey) {
-            core.debug(`Cache state/key: ${cacheKey}`);
-            return cacheKey;
-        }
-        return undefined;
-    }
-}
-class StateProvider extends StateProviderBase {
-    constructor() {
-        super(...arguments);
-        this.setState = core.saveState;
-        this.getState = core.getState;
-    }
-}
-exports.StateProvider = StateProvider;
-class NullMultiStateProvider extends StateProviderBase {
-    constructor() {
-        super(...arguments);
-        this.stateToOutputMap = new Map([
-            [constants_1.State.CacheMatchedKey, constants_1.MultiOutputs.CacheMatchedKeys],
-            [constants_1.State.CachePrimaryKey, constants_1.MultiOutputs.CachePrimaryKeys]
-        ]);
-        this.setState = (key, value) => {
-            core.setOutput(this.stateToOutputMap.get(key), value);
-        };
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        this.getState = (key) => "";
-    }
-}
-exports.NullMultiStateProvider = NullMultiStateProvider;
-class NullStateProvider extends StateProviderBase {
-    constructor() {
-        super(...arguments);
-        this.stateToOutputMap = new Map([
-            [constants_1.State.CacheMatchedKey, constants_1.Outputs.CacheMatchedKey],
-            [constants_1.State.CachePrimaryKey, constants_1.Outputs.CachePrimaryKey]
-        ]);
-        this.setState = (key, value) => {
-            core.setOutput(this.stateToOutputMap.get(key), value);
-        };
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        this.getState = (key) => "";
-    }
-}
-exports.NullStateProvider = NullStateProvider;
-
-
-/***/ }),
+/* 309 */,
 /* 310 */,
 /* 311 */,
 /* 312 */
@@ -10178,7 +10164,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 var coreHttp = __webpack_require__(999);
 var tslib = __webpack_require__(608);
-var coreTracing = __webpack_require__(263);
+var coreTracing = __webpack_require__(72);
 var logger$1 = __webpack_require__(928);
 var abortController = __webpack_require__(106);
 var os = __webpack_require__(87);
@@ -38461,7 +38447,7 @@ __exportStar(__webpack_require__(220), exports);
 __exportStar(__webpack_require__(932), exports);
 __exportStar(__webpack_require__(975), exports);
 __exportStar(__webpack_require__(207), exports);
-__exportStar(__webpack_require__(694), exports);
+__exportStar(__webpack_require__(124), exports);
 __exportStar(__webpack_require__(695), exports);
 var spancontext_utils_1 = __webpack_require__(629);
 Object.defineProperty(exports, "isSpanContextValid", { enumerable: true, get: function () { return spancontext_utils_1.isSpanContextValid; } });
@@ -38533,7 +38519,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArrayOfArray = exports.getInputAsArray = exports.stringToArrayOfArray = exports.arrayOfArrayToString = exports.stringToArray = exports.isValidEvent = exports.logWarning = exports.isExactKeyMatch = exports.isGhes = void 0;
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
-const constants_1 = __webpack_require__(196);
+const constants_1 = __webpack_require__(694);
 function isGhes() {
     const ghUrl = new URL(process.env["GITHUB_SERVER_URL"] || "https://github.com");
     return ghUrl.hostname.toUpperCase() !== "GITHUB.COM";
@@ -38613,7 +38599,318 @@ exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 /* 445 */,
 /* 446 */,
 /* 447 */,
-/* 448 */,
+/* 448 */
+/***/ (function(module) {
+
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+/* global global, define, System, Reflect, Promise */
+var __extends;
+var __assign;
+var __rest;
+var __decorate;
+var __param;
+var __metadata;
+var __awaiter;
+var __generator;
+var __exportStar;
+var __values;
+var __read;
+var __spread;
+var __spreadArrays;
+var __spreadArray;
+var __await;
+var __asyncGenerator;
+var __asyncDelegator;
+var __asyncValues;
+var __makeTemplateObject;
+var __importStar;
+var __importDefault;
+var __classPrivateFieldGet;
+var __classPrivateFieldSet;
+var __createBinding;
+(function (factory) {
+    var root = typeof global === "object" ? global : typeof self === "object" ? self : typeof this === "object" ? this : {};
+    if (typeof define === "function" && define.amd) {
+        define("tslib", ["exports"], function (exports) { factory(createExporter(root, createExporter(exports))); });
+    }
+    else if ( true && typeof module.exports === "object") {
+        factory(createExporter(root, createExporter(module.exports)));
+    }
+    else {
+        factory(createExporter(root));
+    }
+    function createExporter(exports, previous) {
+        if (exports !== root) {
+            if (typeof Object.create === "function") {
+                Object.defineProperty(exports, "__esModule", { value: true });
+            }
+            else {
+                exports.__esModule = true;
+            }
+        }
+        return function (id, v) { return exports[id] = previous ? previous(id, v) : v; };
+    }
+})
+(function (exporter) {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+
+    __extends = function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+
+    __assign = Object.assign || function (t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+        }
+        return t;
+    };
+
+    __rest = function (s, e) {
+        var t = {};
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+            t[p] = s[p];
+        if (s != null && typeof Object.getOwnPropertySymbols === "function")
+            for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+                if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                    t[p[i]] = s[p[i]];
+            }
+        return t;
+    };
+
+    __decorate = function (decorators, target, key, desc) {
+        var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+        if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+        else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+        return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+
+    __param = function (paramIndex, decorator) {
+        return function (target, key) { decorator(target, key, paramIndex); }
+    };
+
+    __metadata = function (metadataKey, metadataValue) {
+        if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
+    };
+
+    __awaiter = function (thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    };
+
+    __generator = function (thisArg, body) {
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        function verb(n) { return function (v) { return step([n, v]); }; }
+        function step(op) {
+            if (f) throw new TypeError("Generator is already executing.");
+            while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0: case 1: t = op; break;
+                    case 4: _.label++; return { value: op[1], done: false };
+                    case 5: _.label++; y = op[1]; op = [0]; continue;
+                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+        }
+    };
+
+    __exportStar = function(m, o) {
+        for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(o, p)) __createBinding(o, m, p);
+    };
+
+    __createBinding = Object.create ? (function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    }) : (function(o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+    });
+
+    __values = function (o) {
+        var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+        if (m) return m.call(o);
+        if (o && typeof o.length === "number") return {
+            next: function () {
+                if (o && i >= o.length) o = void 0;
+                return { value: o && o[i++], done: !o };
+            }
+        };
+        throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+    };
+
+    __read = function (o, n) {
+        var m = typeof Symbol === "function" && o[Symbol.iterator];
+        if (!m) return o;
+        var i = m.call(o), r, ar = [], e;
+        try {
+            while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+        }
+        catch (error) { e = { error: error }; }
+        finally {
+            try {
+                if (r && !r.done && (m = i["return"])) m.call(i);
+            }
+            finally { if (e) throw e.error; }
+        }
+        return ar;
+    };
+
+    /** @deprecated */
+    __spread = function () {
+        for (var ar = [], i = 0; i < arguments.length; i++)
+            ar = ar.concat(__read(arguments[i]));
+        return ar;
+    };
+
+    /** @deprecated */
+    __spreadArrays = function () {
+        for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+        for (var r = Array(s), k = 0, i = 0; i < il; i++)
+            for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+                r[k] = a[j];
+        return r;
+    };
+
+    __spreadArray = function (to, from, pack) {
+        if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+            if (ar || !(i in from)) {
+                if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+                ar[i] = from[i];
+            }
+        }
+        return to.concat(ar || Array.prototype.slice.call(from));
+    };
+
+    __await = function (v) {
+        return this instanceof __await ? (this.v = v, this) : new __await(v);
+    };
+
+    __asyncGenerator = function (thisArg, _arguments, generator) {
+        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+        var g = generator.apply(thisArg, _arguments || []), i, q = [];
+        return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
+        function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+        function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+        function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r);  }
+        function fulfill(value) { resume("next", value); }
+        function reject(value) { resume("throw", value); }
+        function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+    };
+
+    __asyncDelegator = function (o) {
+        var i, p;
+        return i = {}, verb("next"), verb("throw", function (e) { throw e; }), verb("return"), i[Symbol.iterator] = function () { return this; }, i;
+        function verb(n, f) { i[n] = o[n] ? function (v) { return (p = !p) ? { value: __await(o[n](v)), done: n === "return" } : f ? f(v) : v; } : f; }
+    };
+
+    __asyncValues = function (o) {
+        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+        var m = o[Symbol.asyncIterator], i;
+        return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+        function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+        function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+    };
+
+    __makeTemplateObject = function (cooked, raw) {
+        if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
+        return cooked;
+    };
+
+    var __setModuleDefault = Object.create ? (function(o, v) {
+        Object.defineProperty(o, "default", { enumerable: true, value: v });
+    }) : function(o, v) {
+        o["default"] = v;
+    };
+
+    __importStar = function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+
+    __importDefault = function (mod) {
+        return (mod && mod.__esModule) ? mod : { "default": mod };
+    };
+
+    __classPrivateFieldGet = function (receiver, state, kind, f) {
+        if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+        if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+        return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+    };
+
+    __classPrivateFieldSet = function (receiver, state, value, kind, f) {
+        if (kind === "m") throw new TypeError("Private method is not writable");
+        if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+        if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+        return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+    };
+
+    exporter("__extends", __extends);
+    exporter("__assign", __assign);
+    exporter("__rest", __rest);
+    exporter("__decorate", __decorate);
+    exporter("__param", __param);
+    exporter("__metadata", __metadata);
+    exporter("__awaiter", __awaiter);
+    exporter("__generator", __generator);
+    exporter("__exportStar", __exportStar);
+    exporter("__createBinding", __createBinding);
+    exporter("__values", __values);
+    exporter("__read", __read);
+    exporter("__spread", __spread);
+    exporter("__spreadArrays", __spreadArrays);
+    exporter("__spreadArray", __spreadArray);
+    exporter("__await", __await);
+    exporter("__asyncGenerator", __asyncGenerator);
+    exporter("__asyncDelegator", __asyncDelegator);
+    exporter("__asyncValues", __asyncValues);
+    exporter("__makeTemplateObject", __makeTemplateObject);
+    exporter("__importStar", __importStar);
+    exporter("__importDefault", __importDefault);
+    exporter("__classPrivateFieldGet", __classPrivateFieldGet);
+    exporter("__classPrivateFieldSet", __classPrivateFieldSet);
+});
+
+
+/***/ }),
 /* 449 */,
 /* 450 */,
 /* 451 */
@@ -40997,98 +41294,7 @@ Object.defineProperty(exports, "toPlatformPath", { enumerable: true, get: functi
 //# sourceMappingURL=core.js.map
 
 /***/ }),
-/* 471 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const cache = __importStar(__webpack_require__(692));
-const core = __importStar(__webpack_require__(470));
-const constants_1 = __webpack_require__(196);
-const utils = __importStar(__webpack_require__(443));
-// Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
-// @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
-// throw an uncaught exception.  Instead of failing this action, just warn.
-process.on("uncaughtException", e => utils.logWarning(e.message));
-function saveImpl(stateProvider) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let cacheId = -1;
-        try {
-            if (!utils.isCacheFeatureAvailable()) {
-                return;
-            }
-            if (!utils.isValidEvent()) {
-                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
-                return;
-            }
-            // If restore has stored a primary key in state, reuse that
-            // Else re-evaluate from inputs
-            const primaryKey = stateProvider.getState(constants_1.State.CachePrimaryKey) ||
-                core.getInput(constants_1.Inputs.Key);
-            if (!primaryKey) {
-                utils.logWarning(`Key is not specified.`);
-                return;
-            }
-            // If matched restore key is same as primary key, then do not save cache
-            // NO-OP in case of SaveOnly action
-            const restoredKey = stateProvider.getCacheState();
-            if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
-                core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
-                return;
-            }
-            const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
-                required: true
-            });
-            cacheId = yield cache.saveCache(cachePaths, primaryKey, {
-                uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
-            });
-            if (cacheId != -1) {
-                core.info(`Cache saved with key: ${primaryKey}`);
-            }
-        }
-        catch (error) {
-            utils.logWarning(error.message);
-        }
-        return cacheId;
-    });
-}
-exports.default = saveImpl;
-
-
-/***/ }),
+/* 471 */,
 /* 472 */,
 /* 473 */,
 /* 474 */,
@@ -41543,7 +41749,7 @@ function rng() {
 Object.defineProperty(exports, '__esModule', { value: true });
 
 __webpack_require__(97);
-var tslib = __webpack_require__(671);
+var tslib = __webpack_require__(448);
 
 // Copyright (c) Microsoft Corporation.
 /**
@@ -46574,314 +46780,91 @@ var SpanKind;
 
 /***/ }),
 /* 671 */
-/***/ (function(module) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation.
+"use strict";
 
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-/* global global, define, System, Reflect, Promise */
-var __extends;
-var __assign;
-var __rest;
-var __decorate;
-var __param;
-var __metadata;
-var __awaiter;
-var __generator;
-var __exportStar;
-var __values;
-var __read;
-var __spread;
-var __spreadArrays;
-var __spreadArray;
-var __await;
-var __asyncGenerator;
-var __asyncDelegator;
-var __asyncValues;
-var __makeTemplateObject;
-var __importStar;
-var __importDefault;
-var __classPrivateFieldGet;
-var __classPrivateFieldSet;
-var __createBinding;
-(function (factory) {
-    var root = typeof global === "object" ? global : typeof self === "object" ? self : typeof this === "object" ? this : {};
-    if (typeof define === "function" && define.amd) {
-        define("tslib", ["exports"], function (exports) { factory(createExporter(root, createExporter(exports))); });
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
     }
-    else if ( true && typeof module.exports === "object") {
-        factory(createExporter(root, createExporter(module.exports)));
-    }
-    else {
-        factory(createExporter(root));
-    }
-    function createExporter(exports, previous) {
-        if (exports !== root) {
-            if (typeof Object.create === "function") {
-                Object.defineProperty(exports, "__esModule", { value: true });
-            }
-            else {
-                exports.__esModule = true;
-            }
-        }
-        return function (id, v) { return exports[id] = previous ? previous(id, v) : v; };
-    }
-})
-(function (exporter) {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-
-    __extends = function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-
-    __assign = Object.assign || function (t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-        }
-        return t;
-    };
-
-    __rest = function (s, e) {
-        var t = {};
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-            t[p] = s[p];
-        if (s != null && typeof Object.getOwnPropertySymbols === "function")
-            for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-                if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                    t[p[i]] = s[p[i]];
-            }
-        return t;
-    };
-
-    __decorate = function (decorators, target, key, desc) {
-        var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-        if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-        else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-        return c > 3 && r && Object.defineProperty(target, key, r), r;
-    };
-
-    __param = function (paramIndex, decorator) {
-        return function (target, key) { decorator(target, key, paramIndex); }
-    };
-
-    __metadata = function (metadataKey, metadataValue) {
-        if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
-    };
-
-    __awaiter = function (thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    };
-
-    __generator = function (thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-        function verb(n) { return function (v) { return step([n, v]); }; }
-        function step(op) {
-            if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0: case 1: t = op; break;
-                    case 4: _.label++; return { value: op[1], done: false };
-                    case 5: _.label++; y = op[1]; op = [0]; continue;
-                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop(); continue;
-                }
-                op = body.call(thisArg, _);
-            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-        }
-    };
-
-    __exportStar = function(m, o) {
-        for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(o, p)) __createBinding(o, m, p);
-    };
-
-    __createBinding = Object.create ? (function(o, m, k, k2) {
-        if (k2 === undefined) k2 = k;
-        Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-    }) : (function(o, m, k, k2) {
-        if (k2 === undefined) k2 = k;
-        o[k2] = m[k];
-    });
-
-    __values = function (o) {
-        var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
-        if (m) return m.call(o);
-        if (o && typeof o.length === "number") return {
-            next: function () {
-                if (o && i >= o.length) o = void 0;
-                return { value: o && o[i++], done: !o };
-            }
-        };
-        throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
-    };
-
-    __read = function (o, n) {
-        var m = typeof Symbol === "function" && o[Symbol.iterator];
-        if (!m) return o;
-        var i = m.call(o), r, ar = [], e;
-        try {
-            while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-        }
-        catch (error) { e = { error: error }; }
-        finally {
-            try {
-                if (r && !r.done && (m = i["return"])) m.call(i);
-            }
-            finally { if (e) throw e.error; }
-        }
-        return ar;
-    };
-
-    /** @deprecated */
-    __spread = function () {
-        for (var ar = [], i = 0; i < arguments.length; i++)
-            ar = ar.concat(__read(arguments[i]));
-        return ar;
-    };
-
-    /** @deprecated */
-    __spreadArrays = function () {
-        for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-        for (var r = Array(s), k = 0, i = 0; i < il; i++)
-            for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-                r[k] = a[j];
-        return r;
-    };
-
-    __spreadArray = function (to, from, pack) {
-        if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-            if (ar || !(i in from)) {
-                if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-                ar[i] = from[i];
-            }
-        }
-        return to.concat(ar || Array.prototype.slice.call(from));
-    };
-
-    __await = function (v) {
-        return this instanceof __await ? (this.v = v, this) : new __await(v);
-    };
-
-    __asyncGenerator = function (thisArg, _arguments, generator) {
-        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-        var g = generator.apply(thisArg, _arguments || []), i, q = [];
-        return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-        function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
-        function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
-        function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r);  }
-        function fulfill(value) { resume("next", value); }
-        function reject(value) { resume("throw", value); }
-        function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
-    };
-
-    __asyncDelegator = function (o) {
-        var i, p;
-        return i = {}, verb("next"), verb("throw", function (e) { throw e; }), verb("return"), i[Symbol.iterator] = function () { return this; }, i;
-        function verb(n, f) { i[n] = o[n] ? function (v) { return (p = !p) ? { value: __await(o[n](v)), done: n === "return" } : f ? f(v) : v; } : f; }
-    };
-
-    __asyncValues = function (o) {
-        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-        var m = o[Symbol.asyncIterator], i;
-        return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-        function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-        function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-    };
-
-    __makeTemplateObject = function (cooked, raw) {
-        if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
-        return cooked;
-    };
-
-    var __setModuleDefault = Object.create ? (function(o, v) {
-        Object.defineProperty(o, "default", { enumerable: true, value: v });
-    }) : function(o, v) {
-        o["default"] = v;
-    };
-
-    __importStar = function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-
-    __importDefault = function (mod) {
-        return (mod && mod.__esModule) ? mod : { "default": mod };
-    };
-
-    __classPrivateFieldGet = function (receiver, state, kind, f) {
-        if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-        if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-        return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-    };
-
-    __classPrivateFieldSet = function (receiver, state, value, kind, f) {
-        if (kind === "m") throw new TypeError("Private method is not writable");
-        if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-        if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-        return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
-    };
-
-    exporter("__extends", __extends);
-    exporter("__assign", __assign);
-    exporter("__rest", __rest);
-    exporter("__decorate", __decorate);
-    exporter("__param", __param);
-    exporter("__metadata", __metadata);
-    exporter("__awaiter", __awaiter);
-    exporter("__generator", __generator);
-    exporter("__exportStar", __exportStar);
-    exporter("__createBinding", __createBinding);
-    exporter("__values", __values);
-    exporter("__read", __read);
-    exporter("__spread", __spread);
-    exporter("__spreadArrays", __spreadArrays);
-    exporter("__spreadArray", __spreadArray);
-    exporter("__await", __await);
-    exporter("__asyncGenerator", __asyncGenerator);
-    exporter("__asyncDelegator", __asyncDelegator);
-    exporter("__asyncValues", __asyncValues);
-    exporter("__makeTemplateObject", __makeTemplateObject);
-    exporter("__importStar", __importStar);
-    exporter("__importDefault", __importDefault);
-    exporter("__classPrivateFieldGet", __classPrivateFieldGet);
-    exporter("__classPrivateFieldSet", __classPrivateFieldSet);
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
 });
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NullStateProvider = exports.NullMultiStateProvider = exports.StateProvider = void 0;
+const core = __importStar(__webpack_require__(470));
+const constants_1 = __webpack_require__(694);
+class StateProviderBase {
+    constructor() {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+        this.setState = (key, value) => { };
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        this.getState = (key) => "";
+    }
+    getCacheState() {
+        const cacheKey = this.getState(constants_1.State.CacheMatchedKey);
+        if (cacheKey) {
+            core.debug(`Cache state/key: ${cacheKey}`);
+            return cacheKey;
+        }
+        return undefined;
+    }
+}
+class StateProvider extends StateProviderBase {
+    constructor() {
+        super(...arguments);
+        this.setState = core.saveState;
+        this.getState = core.getState;
+    }
+}
+exports.StateProvider = StateProvider;
+class NullMultiStateProvider extends StateProviderBase {
+    constructor() {
+        super(...arguments);
+        this.stateToOutputMap = new Map([
+            [constants_1.State.CacheMatchedKey, constants_1.MultiOutputs.CacheMatchedKeys],
+            [constants_1.State.CachePrimaryKey, constants_1.MultiOutputs.CachePrimaryKeys]
+        ]);
+        this.setState = (key, value) => {
+            core.setOutput(this.stateToOutputMap.get(key), value);
+        };
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        this.getState = (key) => "";
+    }
+}
+exports.NullMultiStateProvider = NullMultiStateProvider;
+class NullStateProvider extends StateProviderBase {
+    constructor() {
+        super(...arguments);
+        this.stateToOutputMap = new Map([
+            [constants_1.State.CacheMatchedKey, constants_1.Outputs.CacheMatchedKey],
+            [constants_1.State.CachePrimaryKey, constants_1.Outputs.CachePrimaryKey]
+        ]);
+        this.setState = (key, value) => {
+            core.setOutput(this.stateToOutputMap.get(key), value);
+        };
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        this.getState = (key) => "";
+    }
+}
+exports.NullStateProvider = NullStateProvider;
 
 
 /***/ }),
@@ -47148,36 +47131,7 @@ exports.default = _default;
 /* 678 */,
 /* 679 */,
 /* 680 */,
-/* 681 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const saveImpl_1 = __importDefault(__webpack_require__(471));
-const stateProvider_1 = __webpack_require__(309);
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        yield (0, saveImpl_1.default)(new stateProvider_1.StateProvider());
-    });
-}
-run();
-exports.default = run;
-
-
-/***/ }),
+/* 681 */,
 /* 682 */,
 /* 683 */
 /***/ (function(module) {
@@ -47438,23 +47392,52 @@ exports.saveCache = saveCache;
 
 "use strict";
 
-/*
- * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 Object.defineProperty(exports, "__esModule", { value: true });
-//# sourceMappingURL=tracer_provider.js.map
+exports.RefKey = exports.Events = exports.MultiState = exports.State = exports.MultiOutputs = exports.Outputs = exports.MultiInputs = exports.Inputs = void 0;
+var Inputs;
+(function (Inputs) {
+    Inputs["Key"] = "key";
+    Inputs["Path"] = "path";
+    Inputs["RestoreKeys"] = "restore-keys";
+    Inputs["UploadChunkSize"] = "upload-chunk-size"; // Input for cache, save action
+})(Inputs = exports.Inputs || (exports.Inputs = {}));
+var MultiInputs;
+(function (MultiInputs) {
+    MultiInputs["Keys"] = "keys";
+    MultiInputs["Paths"] = "paths";
+    MultiInputs["RestoreKeys"] = "restore-keys";
+    MultiInputs["UploadChunkSize"] = "upload-chunk-size"; // Input for cache, save action
+})(MultiInputs = exports.MultiInputs || (exports.MultiInputs = {}));
+var Outputs;
+(function (Outputs) {
+    Outputs["CacheHit"] = "cache-hit";
+    Outputs["CachePrimaryKey"] = "cache-primary-key";
+    Outputs["CacheMatchedKey"] = "cache-matched-key"; // Output from restore action
+})(Outputs = exports.Outputs || (exports.Outputs = {}));
+var MultiOutputs;
+(function (MultiOutputs) {
+    MultiOutputs["CacheHits"] = "cache-hits";
+    MultiOutputs["CachePrimaryKeys"] = "cache-primary-keys";
+    MultiOutputs["CacheMatchedKeys"] = "cache-matched-keys"; // Output from restore action
+})(MultiOutputs = exports.MultiOutputs || (exports.MultiOutputs = {}));
+var State;
+(function (State) {
+    State["CachePrimaryKey"] = "CACHE_KEY";
+    State["CacheMatchedKey"] = "CACHE_RESULT";
+})(State = exports.State || (exports.State = {}));
+var MultiState;
+(function (MultiState) {
+    MultiState["CachePrimaryKeys"] = "CACHE_KEYS";
+    MultiState["CacheMatchedKeys"] = "CACHE_RESULTS";
+})(MultiState = exports.MultiState || (exports.MultiState = {}));
+var Events;
+(function (Events) {
+    Events["Key"] = "GITHUB_EVENT_NAME";
+    Events["Push"] = "push";
+    Events["PullRequest"] = "pull_request";
+})(Events = exports.Events || (exports.Events = {}));
+exports.RefKey = "GITHUB_REF";
+
 
 /***/ }),
 /* 695 */
@@ -48859,7 +48842,36 @@ module.exports = function(dst, src) {
 /* 774 */,
 /* 775 */,
 /* 776 */,
-/* 777 */,
+/* 777 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const stateProvider_1 = __webpack_require__(671);
+const restoreMultiImpl_1 = __importDefault(__webpack_require__(263));
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield (0, restoreMultiImpl_1.default)(new stateProvider_1.NullMultiStateProvider());
+    });
+}
+run();
+exports.default = run;
+
+
+/***/ }),
 /* 778 */,
 /* 779 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -55601,7 +55613,7 @@ var tunnel = __webpack_require__(413);
 var stream = __webpack_require__(794);
 var FormData = __webpack_require__(790);
 var node_fetch = __webpack_require__(454);
-var coreTracing = __webpack_require__(263);
+var coreTracing = __webpack_require__(72);
 var url = __webpack_require__(835);
 __webpack_require__(97);
 

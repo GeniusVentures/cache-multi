@@ -29,7 +29,7 @@ async function restoreMultiImpl(
         stateProvider.setState(State.CachePrimaryKey, primaryKeys);
 
         const pathString = core.getInput("paths");
-        core.info(`Paths: ${pathString}`);
+        core.debug(`Paths: ${pathString}`);
 
         const multiPrimaryKeys = stringToArray(primaryKeys);
         const multiRestoreKeys = utils.getInputAsArrayOfArray(MultiInputs.RestoreKeys);

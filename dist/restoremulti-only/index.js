@@ -7167,6 +7167,8 @@ function restoreMultiImpl(stateProvider) {
             }
             const primaryKeys = core.getInput(constants_1.MultiInputs.Keys, { required: true });
             stateProvider.setState(constants_1.State.CachePrimaryKey, primaryKeys);
+            const pathString = core.getInput("paths");
+            core.debug(`Paths: ${pathString}`);
             const multiPrimaryKeys = (0, actionUtils_1.stringToArray)(primaryKeys);
             const multiRestoreKeys = utils.getInputAsArrayOfArray(constants_1.MultiInputs.RestoreKeys);
             const multiCachePaths = utils.getInputAsArrayOfArray(constants_1.MultiInputs.Paths, {

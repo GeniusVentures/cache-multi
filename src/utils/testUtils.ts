@@ -29,10 +29,10 @@ export function setInputs(input: CacheInput): void {
 }
 
 export function setMultiInputs(input: CacheMultiInput): void {
-    setInput(MultiInputs.Paths, input.paths.map( strArray => JSON.stringify(strArray)).join("\n"));
-    setInput(MultiInputs.Keys, input.keys.join("\n"));
+    setInput(MultiInputs.Paths, JSON.stringify(input.paths));
+    setInput(MultiInputs.Keys, JSON.stringify(input.keys));
     input.restoreKeys &&
-    setInput(MultiInputs.RestoreKeys, input.restoreKeys.map( strArray => JSON.stringify(strArray)).join("\n"));
+    setInput(MultiInputs.RestoreKeys, JSON.stringify(input.restoreKeys));
 }
 
 export function clearInputs(): void {

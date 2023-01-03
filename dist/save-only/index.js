@@ -38620,15 +38620,11 @@ function stringToArray(input) {
 }
 exports.stringToArray = stringToArray;
 function arrayOfArrayToString(input) {
-    return input.map(arr => JSON.stringify(arr)).join('\n');
+    return input ? JSON.stringify(input) : "";
 }
 exports.arrayOfArrayToString = arrayOfArrayToString;
 function stringToArrayOfArray(input) {
-    return input ? input.split("\n")
-        .map(aArray => {
-        const sArray = JSON.parse(aArray);
-        return (Array.isArray(sArray)) ? sArray.map(str => str.replace(/^!\s+/, "!").trim()).filter(x => x !== "") : [];
-    }) : [[]];
+    return input ? JSON.parse(input) : [];
 }
 exports.stringToArrayOfArray = stringToArrayOfArray;
 function getInputAsArray(name, options) {
@@ -38637,8 +38633,8 @@ function getInputAsArray(name, options) {
 }
 exports.getInputAsArray = getInputAsArray;
 function getInputAsArrayOfArray(name, options) {
-    return stringToArrayOfArray(core
-        .getInput(name, options));
+    const jsonStr = core.getInput(name, options);
+    return jsonStr ? stringToArrayOfArray(jsonStr) : [];
 }
 exports.getInputAsArrayOfArray = getInputAsArrayOfArray;
 function getInputAsInt(name, options) {

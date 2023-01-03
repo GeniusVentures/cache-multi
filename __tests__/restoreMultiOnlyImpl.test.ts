@@ -161,7 +161,7 @@ test("restore without AC available should no-op", async () => {
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(0);
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hits", "false");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hits", JSON.stringify([ false ]));
 });
 
 test("restore on GHES without AC available should no-op", async () => {
@@ -177,7 +177,7 @@ test("restore on GHES without AC available should no-op", async () => {
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(0);
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hits", "false");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hits", JSON.stringify([ false ]));
 });
 
 test("restore on GHES with AC available ", async () => {
@@ -206,11 +206,11 @@ test("restore on GHES with AC available ", async () => {
     expect(restoreCacheMock).toHaveBeenCalledWith(paths[0], keys[0], []);
     expect(restoreCacheMock).toHaveBeenCalledWith(paths[1], keys[1], []);
 
-    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", keys.join("\n"));
+    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", JSON.stringify(keys));
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hits", "true\ntrue");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hits", JSON.stringify([true,true]));
 
-    expect(infoMock).toHaveBeenCalledWith(`Cache(s) restored from keys: \n${keys.join("\n")}`);
+    expect(infoMock).toHaveBeenCalledWith(`Cache(s) restored from keys: \n${JSON.stringify(keys)}`);
     expect(failedMock).toHaveBeenCalledTimes(0);
 
 });
@@ -264,7 +264,7 @@ test("restore with no cache found", async () => {
     expect(restoreCacheMock).toHaveBeenCalledWith(paths[0], keys[0], []);
     expect(restoreCacheMock).toHaveBeenCalledWith(paths[1], keys[1], []);
 
-    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", keys.join("\n"));
+    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", JSON.stringify(keys));
     expect(failedMock).toHaveBeenCalledTimes(0);
 
     expect(infoMock).toHaveBeenCalledTimes(2);
@@ -304,7 +304,7 @@ test("restore with restore keys and no cache found", async () => {
     expect(restoreCacheMock).toHaveBeenCalledWith(paths[0], keys[0], restoreKeys[0]);
     expect(restoreCacheMock).toHaveBeenCalledWith(paths[1], keys[1], restoreKeys[1]);
 
-    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", keys.join("\n"));
+    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", JSON.stringify(keys));
     expect(failedMock).toHaveBeenCalledTimes(0);
 
     expect(infoMock).toHaveBeenCalledTimes(2);
@@ -342,12 +342,12 @@ test("restore with cache found for key", async () => {
     expect(restoreCacheMock).toHaveBeenCalledWith(paths[0], keys[0], []);
     expect(restoreCacheMock).toHaveBeenCalledWith(paths[1], keys[1], []);
 
-    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", keys.join("\n"));
+    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", JSON.stringify(keys));
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hits", "true\ntrue");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hits", JSON.stringify([true, true]));
 
     expect(infoMock).toHaveBeenCalledTimes(1);
-    expect(infoMock).toHaveBeenCalledWith(`Cache(s) restored from keys: \n${keys.join("\n")}`);
+    expect(infoMock).toHaveBeenCalledWith(`Cache(s) restored from keys: \n${JSON.stringify(keys)}`);
     expect(failedMock).toHaveBeenCalledTimes(0);
 
 });
@@ -380,13 +380,13 @@ test("restore with cache found for restore key", async () => {
     expect(restoreCacheMock).toHaveBeenCalledWith(paths[0], keys[0], restoreKeys[0]);
     expect(restoreCacheMock).toHaveBeenCalledWith(paths[1], keys[1], restoreKeys[1]);
 
-    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", keys.join("\n"));
+    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", JSON.stringify(keys));
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hits", "false\nfalse");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hits", JSON.stringify([false, false]));
 
     expect(infoMock).toHaveBeenCalledTimes(1);
     expect(infoMock).toHaveBeenCalledWith(
-        `Cache(s) restored from keys: \n${restoreKeys[0][0]}\n${restoreKeys[1][0]}`
+        `Cache(s) restored from keys: \n${JSON.stringify([restoreKeys[0][0], restoreKeys[1][0]])}`
     );
     expect(failedMock).toHaveBeenCalledTimes(0);
 

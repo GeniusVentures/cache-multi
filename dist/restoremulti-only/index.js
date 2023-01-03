@@ -7152,12 +7152,11 @@ const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(694);
 const utils = __importStar(__webpack_require__(443));
-const actionUtils_1 = __webpack_require__(443);
 function restoreMultiImpl(stateProvider) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             if (!utils.isCacheFeatureAvailable()) {
-                core.setOutput(constants_1.MultiOutputs.CacheHits, "false");
+                core.setOutput(constants_1.MultiOutputs.CacheHits, JSON.stringify([false]));
                 return;
             }
             // Validate inputs, this can cause task failure
@@ -7167,10 +7166,8 @@ function restoreMultiImpl(stateProvider) {
             }
             const primaryKeys = core.getInput(constants_1.MultiInputs.Keys, { required: true });
             stateProvider.setState(constants_1.State.CachePrimaryKey, primaryKeys);
-            core.debug(`Keys: ${primaryKeys.toString()}`);
             const pathString = core.getInput("paths");
-            core.debug(`Paths: ${pathString.toString()}`);
-            const multiPrimaryKeys = (0, actionUtils_1.stringToArray)(primaryKeys);
+            const multiPrimaryKeys = JSON.parse(primaryKeys);
             const multiRestoreKeys = utils.getInputAsArrayOfArray(constants_1.MultiInputs.RestoreKeys);
             const multiCachePaths = utils.getInputAsArrayOfArray(constants_1.MultiInputs.Paths, {
                 required: true
@@ -7200,10 +7197,10 @@ function restoreMultiImpl(stateProvider) {
                 if (!allSucceeded) {
                     return;
                 }
-                const cacheKeysString = cacheKeys.join('\n');
+                const cacheKeysString = JSON.stringify(cacheKeys);
                 // Store the matched cache key in states
                 stateProvider.setState(constants_1.State.CacheMatchedKey, cacheKeysString);
-                core.setOutput(constants_1.MultiOutputs.CacheHits, isExactKeyMatches.join('\n'));
+                core.setOutput(constants_1.MultiOutputs.CacheHits, JSON.stringify(isExactKeyMatches));
                 core.info(`Cache(s) restored from keys: \n${cacheKeysString}`);
                 return cacheKeys;
             });
@@ -38553,15 +38550,11 @@ function stringToArray(input) {
 }
 exports.stringToArray = stringToArray;
 function arrayOfArrayToString(input) {
-    return input.map(arr => JSON.stringify(arr)).join('\n');
+    return input ? JSON.stringify(input) : "";
 }
 exports.arrayOfArrayToString = arrayOfArrayToString;
 function stringToArrayOfArray(input) {
-    return input ? input.split("\n")
-        .map(aArray => {
-        const sArray = JSON.parse(aArray);
-        return (Array.isArray(sArray)) ? sArray.map(str => str.replace(/^!\s+/, "!").trim()).filter(x => x !== "") : [];
-    }) : [[]];
+    return input ? JSON.parse(input) : [];
 }
 exports.stringToArrayOfArray = stringToArrayOfArray;
 function getInputAsArray(name, options) {
@@ -38570,8 +38563,8 @@ function getInputAsArray(name, options) {
 }
 exports.getInputAsArray = getInputAsArray;
 function getInputAsArrayOfArray(name, options) {
-    return stringToArrayOfArray(core
-        .getInput(name, options));
+    const jsonStr = core.getInput(name, options);
+    return jsonStr ? stringToArrayOfArray(jsonStr) : [];
 }
 exports.getInputAsArrayOfArray = getInputAsArrayOfArray;
 function getInputAsInt(name, options) {

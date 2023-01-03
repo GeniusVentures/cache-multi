@@ -42,16 +42,12 @@ export function stringToArray(
 export function arrayOfArrayToString(
     input: string[][]
 ) : string {
-    return input.map( arr => JSON.stringify(arr)).join('\n')
+    return input ? JSON.stringify(input) : "";
 }
 export function stringToArrayOfArray(
     input: string
 ) : string[][] {
-    return input ? input.split("\n")
-        .map(aArray => {
-            const sArray: string[] = JSON.parse(aArray);
-            return (Array.isArray(sArray)) ? sArray.map( str => str.replace(/^!\s+/, "!").trim()).filter(x => x !== "") : [];
-        }) : [[]];
+    return input ? JSON.parse(input): [];
 }
 
 export function getInputAsArray(
@@ -66,8 +62,8 @@ export function getInputAsArrayOfArray(
     name: string,
     options?: core.InputOptions
 ): string[][] {
-    return stringToArrayOfArray(core
-        .getInput(name, options));
+    const jsonStr = core.getInput(name, options);
+    return jsonStr ? stringToArrayOfArray(jsonStr) : [];
 }
 
 export function getInputAsInt(

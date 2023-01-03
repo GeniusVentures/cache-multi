@@ -3,21 +3,21 @@ description: 'Restore multiple Cache artifacts like dependencies and build outpu
 author: 'SuperGNUS'
 inputs:
   paths:
-    description: 'A list of a list of files, directories, and wildcard patterns to restore'
+    description: 'An array of a array of strings for files, directories, and wildcard patterns to restore'
     required: true
   keys:
-    description: 'A list of explicit keys for restoring the cache'
+    description: 'An array of explicit keys for restoring the cache'
     required: true
   restore-keys:
-    description: 'A list of ordered lists of keys to use for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
+    description: 'An array of ordered arrays of keys to use for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
     required: false
 outputs:
   cache-hits:
-    description: 'A list of boolean values to indicate an exact match was found for the primary keys'
+    description: 'A boolean array of values to indicate an exact match was found for the primary keys'
   cache-primary-keys:
-    description: 'A list of the resolved cache keys for which a cache match was attempted'
+    description: 'An array of the resolved cache keys for which a cache match was attempted'
   cache-matched-keys:
-    description: 'A list of Keys of the caches that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys'
+    description: 'An array of Keys of the caches that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys'
 runs:
   using: 'node16'
   main: '../dist/restoremulti-only/index.js'

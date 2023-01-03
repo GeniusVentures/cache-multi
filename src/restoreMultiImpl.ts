@@ -11,7 +11,7 @@ async function restoreMultiImpl(
 ): Promise<string[] | undefined> {
     try {
         if (!utils.isCacheFeatureAvailable()) {
-            core.setOutput(MultiOutputs.CacheHits, "false");
+            core.setOutput(MultiOutputs.CacheHits, JSON.stringify([false]));
             return;
         }
 
@@ -27,12 +27,10 @@ async function restoreMultiImpl(
 
         const primaryKeys = core.getInput(MultiInputs.Keys, { required: true });
         stateProvider.setState(State.CachePrimaryKey, primaryKeys);
-        core.debug(`Keys: ${primaryKeys.toString()}`);
 
         const pathString = core.getInput("paths");
-        core.debug(`Paths: ${pathString.toString()}`);
 
-        const multiPrimaryKeys = stringToArray(primaryKeys);
+        const multiPrimaryKeys = JSON.parse(primaryKeys);
         const multiRestoreKeys = utils.getInputAsArrayOfArray(MultiInputs.RestoreKeys);
         const multiCachePaths = utils.getInputAsArrayOfArray(MultiInputs.Paths, {
             required: true
@@ -75,11 +73,11 @@ async function restoreMultiImpl(
                 return;
             }
 
-            const cacheKeysString = cacheKeys.join('\n');
+            const cacheKeysString = JSON.stringify(cacheKeys);
             // Store the matched cache key in states
             stateProvider.setState(State.CacheMatchedKey, cacheKeysString);
 
-            core.setOutput(MultiOutputs.CacheHits, isExactKeyMatches.join('\n'));
+            core.setOutput(MultiOutputs.CacheHits, JSON.stringify(isExactKeyMatches));
             core.info(`Cache(s) restored from keys: \n${cacheKeysString}`);
             return cacheKeys;
         });

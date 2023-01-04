@@ -34,9 +34,6 @@ async function restoreMultiImpl(
             required: true
         });
 
-        core.info(`Primary keys: ${primaryKeys}`);
-        core.info(`multiRestoreKeys: ${JSON.stringify(multiRestoreKeys)}`);
-        core.info(`multiCachePaths: ${JSON.stringify(multiCachePaths)}`);
         const rcPromises: Array<Promise<string | undefined>> = new Array<Promise<string | undefined>>();
         multiPrimaryKeys.map( (primaryKey, index) => {
             const cachePaths: string[] = (multiCachePaths.length > index) ? multiCachePaths[index] : [];

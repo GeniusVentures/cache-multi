@@ -32,7 +32,7 @@ export function setMultiInputs(input: CacheMultiInput): void {
     setInput(MultiInputs.Paths, JSON.stringify(input.paths));
     setInput(MultiInputs.Keys, JSON.stringify(input.keys));
     input.restoreKeys &&
-    setInput(MultiInputs.RestoreKeys, JSON.stringify(input.restoreKeys));
+        setInput(MultiInputs.RestoreKeys, JSON.stringify(input.restoreKeys));
 }
 
 export function clearInputs(): void {

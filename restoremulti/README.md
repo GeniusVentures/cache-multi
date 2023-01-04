@@ -6,15 +6,15 @@ without having to necessarily save it.  It accepts an array of inputs and iterat
 
 ## Inputs
 
-* `paths` - A list of lists of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
-* `keys` - A list of Strings used while saving cache for restoring the cache
-* `restore-keys` - A list of ordered lists of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
+* `paths` - (JSON encoded) - A list of lists of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
+* `keys` -(JSON encoded) - A list of Strings used while saving cache for restoring the cache
+* `restore-keys` - (JSON encoded) - A list of ordered lists of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
 
 ## Outputs
 
-* `cache-hits` - A list of boolean values to indicate an exact match was found for the key. 
-* `cache-primary-keys` - A list of Cache primary keyS passed in the input to use in subsequent steps of the workflow.
-* `cache-matched-keys` - A list of Keys of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys.
+* `cache-hits` - (JSON encoded) - A list of boolean values to indicate an exact match was found for the key. 
+* `cache-primary-keys` - (JSON encoded) - A list of Cache primary keyS passed in the input to use in subsequent steps of the workflow.
+* `cache-matched-keys` - (JSON encoded) - A list of Keys of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys.
 
 > **Note**
 `cache-hits` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
@@ -34,18 +34,14 @@ In case you are using another workflow to create and save your cache that can be
 steps:
   - uses: actions/checkout@v3
 
-  - uses: actions/cache-multi/restore-multi@v3.2.2
+  - uses: actions/cache-multi/restoremulti@v3.2.2
     id: cache
     with:
-      paths: |
-        "[ \"path/to/dependencies\", \"path/to/dependencies2\"]"
-        "[ \"path/to/dependencies\", \"path/to/dependencies2\"]"
-      keys: |
-        ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}, ${{ runner.os }}-${{ hashFiles('**/lockfiles-2') }}
-        ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}, ${{ runner.os }}-${{ hashFiles('**/lockfiles-2') }}
+      paths: "[ [ \"path/to/dependencies\", \"path/to/dependencies2\"], [ \"path/to/dependencies\", \"path/to/dependencies2\"] ]"
+      keys: "[ \"${{ runner.os }}-${{ hashFiles('**/lockfiles') }}\", \"${{ runner.os }}-${{ hashFiles('**/lockfiles-2') }}\" ] "
 
   - name: Install Dependencies
-    if: steps.cache.outputs.cache-hit != 'true'
+    if: $$ {{ fromJson(steps.cache.outputs.cache-hits)[0] != 'true' }}
     run: /install.sh
 
   - name: Build

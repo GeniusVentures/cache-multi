@@ -7166,12 +7166,14 @@ function restoreMultiImpl(stateProvider) {
             }
             const primaryKeys = core.getInput(constants_1.MultiInputs.Keys, { required: true });
             stateProvider.setState(constants_1.State.CachePrimaryKey, primaryKeys);
-            const pathString = core.getInput("paths");
             const multiPrimaryKeys = JSON.parse(primaryKeys);
             const multiRestoreKeys = utils.getInputAsArrayOfArray(constants_1.MultiInputs.RestoreKeys);
             const multiCachePaths = utils.getInputAsArrayOfArray(constants_1.MultiInputs.Paths, {
                 required: true
             });
+            core.info(`Primary keys: ${primaryKeys}`);
+            core.info(`multiRestoreKeys: ${JSON.stringify(multiRestoreKeys)}`);
+            core.info(`multiCachePaths: ${JSON.stringify(multiCachePaths)}`);
             const rcPromises = new Array();
             multiPrimaryKeys.map((primaryKey, index) => {
                 const cachePaths = (multiCachePaths.length > index) ? multiCachePaths[index] : [];

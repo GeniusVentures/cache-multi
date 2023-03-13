@@ -5,7 +5,7 @@ inputs:
   paths:
     description: 'An array of a array of strings for files, directories, and wildcard patterns to restore'
     required: true
-  keys:
+  multi-keys:
     description: 'An array of explicit keys for restoring the cache'
     required: true
   restore-keys:

@@ -17,7 +17,7 @@ interface CacheInput {
 
 interface CacheMultiInput {
     paths: string[][];
-    keys: string[];
+    multiKeys: string[];
     restoreKeys?: string[][];
 }
 
@@ -30,7 +30,7 @@ export function setInputs(input: CacheInput): void {
 
 export function setMultiInputs(input: CacheMultiInput): void {
     setInput(MultiInputs.Paths, JSON.stringify(input.paths));
-    setInput(MultiInputs.Keys, JSON.stringify(input.keys));
+    setInput(MultiInputs.MultiKeys, JSON.stringify(input.multiKeys));
     input.restoreKeys &&
         setInput(MultiInputs.RestoreKeys, JSON.stringify(input.restoreKeys));
 }
@@ -44,7 +44,7 @@ export function clearInputs(): void {
 
 export function clearMultiInputs(): void {
     delete process.env[getInputName(MultiInputs.Paths)];
-    delete process.env[getInputName(MultiInputs.Keys)];
+    delete process.env[getInputName(MultiInputs.MultiKeys)];
     delete process.env[getInputName(MultiInputs.RestoreKeys)];
     delete process.env[getInputName(MultiInputs.UploadChunkSize)];
 }

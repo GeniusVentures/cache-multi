@@ -6,7 +6,7 @@ export enum Inputs {
 }
 
 export enum MultiInputs {
-    Keys = "keys", // Input for cache, restore, save action
+    MultiKeys = "multi-keys", // Input for multiple suffixes
     Paths = "paths", // Input for cache, restore, save action
     RestoreKeys = "restore-keys", // Input for cache, restore action
     UploadChunkSize = "upload-chunk-size" // Input for cache, save action

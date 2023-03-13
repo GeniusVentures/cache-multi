@@ -7,7 +7,7 @@ without having to necessarily save it.  It accepts an array of inputs and iterat
 ## Inputs
 
 * `paths` - (JSON encoded) - A list of lists of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
-* `keys` -(JSON encoded) - A list of Strings used while saving cache for restoring the cache
+* `multi-keys` -(JSON encoded) - A list of Strings used while saving cache for restoring the cache
 * `restore-keys` - (JSON encoded) - A list of ordered lists of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
 
 ## Outputs
@@ -37,8 +37,8 @@ steps:
   - uses: actions/cache-multi/restoremulti@v3.2.2
     id: cache
     with:
+      multi-keys: "[ \"${{ runner.os }}-${{ hashFiles('**/lockfiles') }}\", \"${{ runner.os }}-${{ hashFiles('**/lockfiles-2') }}\" ] "
       paths: "[ [ \"path/to/dependencies\", \"path/to/dependencies2\"], [ \"path/to/dependencies\", \"path/to/dependencies2\"] ]"
-      keys: "[ \"${{ runner.os }}-${{ hashFiles('**/lockfiles') }}\", \"${{ runner.os }}-${{ hashFiles('**/lockfiles-2') }}\" ] "
 
   - name: Install Dependencies
     if: $$ {{ fromJson(steps.cache.outputs.cache-hits)[0] != 'true' }}

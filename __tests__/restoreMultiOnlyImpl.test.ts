@@ -83,7 +83,7 @@ test("restore with too many keys should fail", async () => {
     const restoreKeys = [ [...Array(20).keys()].map(x => x.toString()), [...Array(20).keys()].map(x => x.toString())];
     testUtils.setMultiInputs({
         paths: paths,
-        keys,
+        multiKeys: keys,
         restoreKeys
     });
     const failedMock = jest.spyOn(core, "setFailed");
@@ -103,7 +103,7 @@ test("restore with large key should fail", async () => {
     const keys = [ "foo".repeat(512), "bar".repeat(512)]; // Over the 512 character limit
     testUtils.setMultiInputs({
         paths: paths,
-        keys
+        multiKeys: keys
     });
     const failedMock = jest.spyOn(core, "setFailed");
     const restoreCacheMock = jest.spyOn(cache, "restoreCache");
@@ -121,7 +121,7 @@ test("restore with invalid key should fail", async () => {
     const keys = ["comma,comma", "comma,comma"];
     testUtils.setMultiInputs({
         paths: paths,
-        keys
+        multiKeys: keys
     });
     const failedMock = jest.spyOn(core, "setFailed");
     const restoreCacheMock = jest.spyOn(cache, "restoreCache");
@@ -186,7 +186,7 @@ test("restore on GHES with AC available ", async () => {
     const keys = [ "node-test", "node-test2"];
     testUtils.setMultiInputs({
         paths: paths,
-        keys
+        multiKeys: keys
     });
 
     const infoMock = jest.spyOn(core, "info");
@@ -237,7 +237,7 @@ test("restore with no key", async () => {
 
     expect(failedMock).toHaveBeenCalledTimes(1);
     expect(failedMock).toHaveBeenCalledWith(
-        "Input required and not supplied: keys"
+        "Input required and not supplied: multi-keys"
     );
 });
 
@@ -246,7 +246,7 @@ test("restore with no cache found", async () => {
     const keys = ["node-test", "node-test2"];
     testUtils.setMultiInputs({
         paths: paths,
-        keys
+        multiKeys: keys
     });
 
     const infoMock = jest.spyOn(core, "info");
@@ -285,7 +285,7 @@ test("restore with restore keys and no cache found", async () => {
     const restoreKeys = [ ["node-"], ["node-test2"] ];
     testUtils.setMultiInputs({
         paths: paths,
-        keys,
+        multiKeys: keys,
         restoreKeys: restoreKeys
     });
 
@@ -322,7 +322,7 @@ test("restore with cache found for key", async () => {
     const keys = ["node-test", "node-test2"];
     testUtils.setMultiInputs({
         paths: paths,
-        keys,
+        multiKeys: keys,
     });
 
     const infoMock = jest.spyOn(core, "info");
@@ -358,7 +358,7 @@ test("restore with cache found for restore key", async () => {
     const restoreKeys = [ ["node-"], ["node2-"]];
     testUtils.setMultiInputs({
         paths: paths,
-        keys,
+        multiKeys: keys,
         restoreKeys: restoreKeys
     });
 

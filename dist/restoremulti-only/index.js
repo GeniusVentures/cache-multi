@@ -7164,7 +7164,7 @@ function restoreMultiImpl(stateProvider) {
                 utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
                 return;
             }
-            const primaryKeys = core.getInput(constants_1.MultiInputs.Keys, { required: true });
+            const primaryKeys = core.getInput(constants_1.MultiInputs.MultiKeys, { required: true });
             stateProvider.setState(constants_1.State.CachePrimaryKey, primaryKeys);
             const multiPrimaryKeys = JSON.parse(primaryKeys);
             const multiRestoreKeys = utils.getInputAsArrayOfArray(constants_1.MultiInputs.RestoreKeys);
@@ -47398,7 +47398,7 @@ var Inputs;
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var MultiInputs;
 (function (MultiInputs) {
-    MultiInputs["Keys"] = "keys";
+    MultiInputs["MultiKeys"] = "multi-keys";
     MultiInputs["Paths"] = "paths";
     MultiInputs["RestoreKeys"] = "restore-keys";
     MultiInputs["UploadChunkSize"] = "upload-chunk-size"; // Input for cache, save action

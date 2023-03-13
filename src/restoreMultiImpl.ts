@@ -25,7 +25,7 @@ async function restoreMultiImpl(
             return;
         }
 
-        const primaryKeys = core.getInput(MultiInputs.Keys, { required: true });
+        const primaryKeys = core.getInput(MultiInputs.MultiKeys, { required: true });
         stateProvider.setState(State.CachePrimaryKey, primaryKeys);
 
         const multiPrimaryKeys = JSON.parse(primaryKeys);
@@ -35,6 +35,7 @@ async function restoreMultiImpl(
         });
 
         const rcPromises: Array<Promise<string | undefined>> = new Array<Promise<string | undefined>>();
+
         multiPrimaryKeys.map( (primaryKey, index) => {
             const cachePaths: string[] = (multiCachePaths.length > index) ? multiCachePaths[index] : [];
             const restoreKeys: string[] = (multiRestoreKeys.length > index) ? multiRestoreKeys[index] : [];

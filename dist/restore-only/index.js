@@ -4974,7 +4974,7 @@ var Inputs;
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var MultiInputs;
 (function (MultiInputs) {
-    MultiInputs["Keys"] = "keys";
+    MultiInputs["MultiKeys"] = "multi-keys";
     MultiInputs["Paths"] = "paths";
     MultiInputs["RestoreKeys"] = "restore-keys";
     MultiInputs["UploadChunkSize"] = "upload-chunk-size"; // Input for cache, save action

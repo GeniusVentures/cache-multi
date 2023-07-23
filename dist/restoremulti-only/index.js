@@ -38269,6 +38269,7 @@ function createTar(archiveFolder, sourceDirectories, compressionMethod) {
         }
         const args = [
             '--posix',
+            '--dereference',
             ...getCompressionProgram(),
             '-cf',
             cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),

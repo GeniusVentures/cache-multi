@@ -9,6 +9,8 @@ without having to necessarily save it.  It accepts an array of inputs and iterat
 * `paths` - (JSON encoded) - A list of lists of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `multi-keys` -(JSON encoded) - A list of Strings used while saving cache for restoring the cache
 * `restore-keys` - (JSON encoded) - A list of ordered lists of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
+* `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
+* `lookup-only` - Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache. Default: `false`
 
 ## Outputs
 
@@ -34,7 +36,7 @@ In case you are using another workflow to create and save your cache that can be
 steps:
   - uses: actions/checkout@v3
 
-  - uses: actions/cache-multi/restoremulti@v3.2.2
+  - uses: actions/cache-multi/restoremulti@v3.3.1
     id: cache
     with:
       multi-keys: "[ \"${{ runner.os }}-${{ hashFiles('**/lockfiles') }}\", \"${{ runner.os }}-${{ hashFiles('**/lockfiles-2') }}\" ] "

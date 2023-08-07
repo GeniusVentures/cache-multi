@@ -31,14 +31,26 @@ async function restoreImpl(
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
             required: true
         });
+        const enableCrossOsArchive = utils.getInputAsBool(
+            Inputs.EnableCrossOsArchive
+        );
+        const failOnCacheMiss = utils.getInputAsBool(Inputs.FailOnCacheMiss);
+        const lookupOnly = utils.getInputAsBool(Inputs.LookupOnly);
 
         const cacheKey = await cache.restoreCache(
             cachePaths,
             primaryKey,
-            restoreKeys
+            restoreKeys,
+            { lookupOnly: lookupOnly },
+            enableCrossOsArchive
         );
 
         if (!cacheKey) {
+            if (failOnCacheMiss) {
+                throw new Error(
+                    `Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`
+                );
+            }
             core.info(
                 `Cache not found for input keys: ${[
                     primaryKey,
@@ -58,7 +70,11 @@ async function restoreImpl(
         );
 
         core.setOutput(Outputs.CacheHit, isExactKeyMatch.toString());
-        core.info(`Cache restored from key: ${cacheKey}`);
+        if (lookupOnly) {
+            core.info(`Cache found and can be restored from key: ${cacheKey}`);
+        } else {
+            core.info(`Cache restored from key: ${cacheKey}`);
+        }
 
         return cacheKey;
     } catch (error: unknown) {

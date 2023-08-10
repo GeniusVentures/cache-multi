@@ -58,6 +58,8 @@ async function restoreMultiImpl(
             let allSucceeded = true;
             cacheKeys.map( (cacheKey, index) => {
                 if (!cacheKey) {
+                    const mResKeys = (multiRestoreKeys.length > index) ? multiRestoreKeys[index] : [];
+
                     if (failOnCacheMiss) {
                       throw new Error(
                       `Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input keys: ${[
@@ -66,7 +68,6 @@ async function restoreMultiImpl(
                         ].join(", ")}`
                       );
                     }
-                    const mResKeys = (multiRestoreKeys.length > index) ? multiRestoreKeys[index] : [];
                     core.info(
                         `Cache not found for input keys: ${[
                             multiPrimaryKeys[index],

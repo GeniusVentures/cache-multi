@@ -34,10 +34,10 @@ async function restoreMultiImpl(
             required: true
         });
         const enableCrossOsArchive = utils.getInputAsBool(
-            Inputs.EnableCrossOsArchive
+            MultiInputs.EnableCrossOsArchive
         );
-        const failOnCacheMiss = utils.getInputAsBool(Inputs.FailOnCacheMiss);
-        const lookupOnly = utils.getInputAsBool(Inputs.LookupOnly);
+        const failOnCacheMiss = utils.getInputAsBool(MultiInputs.FailOnCacheMiss);
+        const lookupOnly = utils.getInputAsBool(MultiInputs.LookupOnly);
 
         const rcPromises: Array<Promise<string | undefined>> = new Array<Promise<string | undefined>>();
 

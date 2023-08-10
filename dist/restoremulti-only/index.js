@@ -7110,9 +7110,9 @@ function restoreMultiImpl(stateProvider) {
             const multiCachePaths = utils.getInputAsArrayOfArray(constants_1.MultiInputs.Paths, {
                 required: true
             });
-            const enableCrossOsArchive = utils.getInputAsBool(constants_1.Inputs.EnableCrossOsArchive);
-            const failOnCacheMiss = utils.getInputAsBool(constants_1.Inputs.FailOnCacheMiss);
-            const lookupOnly = utils.getInputAsBool(constants_1.Inputs.LookupOnly);
+            const enableCrossOsArchive = utils.getInputAsBool(constants_1.MultiInputs.EnableCrossOsArchive);
+            const failOnCacheMiss = utils.getInputAsBool(constants_1.MultiInputs.FailOnCacheMiss);
+            const lookupOnly = utils.getInputAsBool(constants_1.MultiInputs.LookupOnly);
             const rcPromises = new Array();
             multiPrimaryKeys.map((primaryKey, index) => {
                 const cachePaths = (multiCachePaths.length > index) ? multiCachePaths[index] : [];

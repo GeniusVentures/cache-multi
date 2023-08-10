@@ -60,7 +60,10 @@ async function restoreMultiImpl(
                 if (!cacheKey) {
                     if (failOnCacheMiss) {
                       throw new Error(
-                      `Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`
+                      `Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input keys: ${[
+                            multiPrimaryKeys[index],
+                            ...mResKeys
+                        ].join(", ")}`
                       );
                     }
                     const mResKeys = (multiRestoreKeys.length > index) ? multiRestoreKeys[index] : [];

@@ -7124,13 +7124,14 @@ function restoreMultiImpl(stateProvider) {
                 let allSucceeded = true;
                 cacheKeys.map((cacheKey, index) => {
                     if (!cacheKey) {
+                        const mResKeys = (multiRestoreKeys.length > index) ? multiRestoreKeys[index] : [];
+
                         if (failOnCacheMiss) {
                             throw new Error(`Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input keys: ${[
                             multiPrimaryKeys[index],
                             ...mResKeys
                         ].join(", ")}`);
                         }
-                        const mResKeys = (multiRestoreKeys.length > index) ? multiRestoreKeys[index] : [];
                         core.info(`Cache not found for input keys: ${[
                             multiPrimaryKeys[index],
                             ...mResKeys
@@ -46018,6 +46019,9 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size"; // Input for cache, save action
+    Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive";
+    Inputs["FailOnCacheMiss"] = "fail-on-cache-miss";
+    Inputs["LookupOnly"] = "lookup-only"; // Input for cache, restore action
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var MultiInputs;
 (function (MultiInputs) {
@@ -46025,6 +46029,9 @@ var MultiInputs;
     MultiInputs["Paths"] = "paths";
     MultiInputs["RestoreKeys"] = "restore-keys";
     MultiInputs["UploadChunkSize"] = "upload-chunk-size"; // Input for cache, save action
+    MultiInputs["EnableCrossOsArchive"] = "enableCrossOsArchive";
+    MultiInputs["FailOnCacheMiss"] = "fail-on-cache-miss";
+    MultiInputs["LookupOnly"] = "lookup-only"; // Input for cache, restore action
 })(MultiInputs = exports.MultiInputs || (exports.MultiInputs = {}));
 var Outputs;
 (function (Outputs) {

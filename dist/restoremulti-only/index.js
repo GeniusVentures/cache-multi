@@ -36958,11 +36958,13 @@ function getInputAsInt(name, options) {
     return value;
 }
 exports.getInputAsInt = getInputAsInt;
-function isCacheFeatureAvailable() {
-    if (cache.isFeatureAvailable()) {
-        return true;
-    }
+
+function getInputAsBool(name, options) {
+    const result = core.getInput(name, options);
+    return result.toLowerCase() === "true";
+}
 exports.getInputAsBool = getInputAsBool;
+
 function isCacheFeatureAvailable() {
     if (cache.isFeatureAvailable()) {
         return true;

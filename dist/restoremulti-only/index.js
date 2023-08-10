@@ -36899,7 +36899,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArrayOfArray = exports.getInputAsArray = exports.stringToArrayOfArray = exports.arrayOfArrayToString = exports.stringToArray = exports.isValidEvent = exports.logWarning = exports.isExactKeyMatch = exports.isGhes = void 0;
+exports.isCacheFeatureAvailable = exports.getInputAsBool = exports.getInputAsInt = exports.getInputAsArrayOfArray = exports.getInputAsArray = exports.stringToArrayOfArray = exports.arrayOfArrayToString = exports.stringToArray = exports.isValidEvent = exports.logWarning = exports.isExactKeyMatch = exports.isGhes = void 0;
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(694);
@@ -36958,6 +36958,11 @@ function getInputAsInt(name, options) {
     return value;
 }
 exports.getInputAsInt = getInputAsInt;
+function isCacheFeatureAvailable() {
+    if (cache.isFeatureAvailable()) {
+        return true;
+    }
+exports.getInputAsBool = getInputAsBool;
 function isCacheFeatureAvailable() {
     if (cache.isFeatureAvailable()) {
         return true;

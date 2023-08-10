@@ -7110,17 +7110,26 @@ function restoreMultiImpl(stateProvider) {
             const multiCachePaths = utils.getInputAsArrayOfArray(constants_1.MultiInputs.Paths, {
                 required: true
             });
+            const enableCrossOsArchive = utils.getInputAsBool(constants_1.Inputs.EnableCrossOsArchive);
+            const failOnCacheMiss = utils.getInputAsBool(constants_1.Inputs.FailOnCacheMiss);
+            const lookupOnly = utils.getInputAsBool(constants_1.Inputs.LookupOnly);
             const rcPromises = new Array();
             multiPrimaryKeys.map((primaryKey, index) => {
                 const cachePaths = (multiCachePaths.length > index) ? multiCachePaths[index] : [];
                 const restoreKeys = (multiRestoreKeys.length > index) ? multiRestoreKeys[index] : [];
-                rcPromises.push(cache.restoreCache(cachePaths, primaryKey, restoreKeys));
+                rcPromises.push(cache.restoreCache(cachePaths, primaryKey, restoreKeys, { lookupOnly: lookupOnly }, enableCrossOsArchive));
             });
             yield Promise.all(rcPromises).then(cacheKeys => {
                 const isExactKeyMatches = new Array();
                 let allSucceeded = true;
                 cacheKeys.map((cacheKey, index) => {
                     if (!cacheKey) {
+                        if (failOnCacheMiss) {
+                            throw new Error(`Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input keys: ${[
+                            multiPrimaryKeys[index],
+                            ...mResKeys
+                        ].join(", ")}`);
+                        }
                         const mResKeys = (multiRestoreKeys.length > index) ? multiRestoreKeys[index] : [];
                         core.info(`Cache not found for input keys: ${[
                             multiPrimaryKeys[index],
@@ -7139,7 +7148,12 @@ function restoreMultiImpl(stateProvider) {
                 // Store the matched cache key in states
                 stateProvider.setState(constants_1.State.CacheMatchedKey, cacheKeysString);
                 core.setOutput(constants_1.MultiOutputs.CacheHits, JSON.stringify(isExactKeyMatches));
-                core.info(`Cache(s) restored from keys: \n${cacheKeysString}`);
+                if (lookupOnly) {
+                    core.info(`Cache(s) found and can be restored from keys: \n${cacheKeysString}`);
+                }
+                else {
+                    core.info(`Cache(s) restored from keys: \n${cacheKeysString}`);
+                }
                 return cacheKeys;
             });
         }

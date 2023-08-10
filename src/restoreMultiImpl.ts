@@ -33,6 +33,11 @@ async function restoreMultiImpl(
         const multiCachePaths = utils.getInputAsArrayOfArray(MultiInputs.Paths, {
             required: true
         });
+        const enableCrossOsArchive = utils.getInputAsBool(
+            Inputs.EnableCrossOsArchive
+        );
+        const failOnCacheMiss = utils.getInputAsBool(Inputs.FailOnCacheMiss);
+        const lookupOnly = utils.getInputAsBool(Inputs.LookupOnly);
 
         const rcPromises: Array<Promise<string | undefined>> = new Array<Promise<string | undefined>>();
 
@@ -42,7 +47,9 @@ async function restoreMultiImpl(
             rcPromises.push(cache.restoreCache(
                 cachePaths,
                 primaryKey,
-                restoreKeys
+            restoreKeys,
+            { lookupOnly: lookupOnly },
+            enableCrossOsArchive
             ));
         });
 
@@ -51,6 +58,11 @@ async function restoreMultiImpl(
             let allSucceeded = true;
             cacheKeys.map( (cacheKey, index) => {
                 if (!cacheKey) {
+                    if (failOnCacheMiss) {
+                      throw new Error(
+                      `Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`
+                      );
+                    }
                     const mResKeys = (multiRestoreKeys.length > index) ? multiRestoreKeys[index] : [];
                     core.info(
                         `Cache not found for input keys: ${[

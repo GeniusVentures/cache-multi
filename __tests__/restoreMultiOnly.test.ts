@@ -5,8 +5,8 @@ import { Events, RefKey } from "../src/constants";
 import run from "../src/restoreMultiOnly";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
-import {arrayOfArrayToString, stringToArray} from "../src/utils/actionUtils";
-import {NullMultiStateProvider} from "../src/stateProvider";
+import { arrayOfArrayToString, stringToArray } from "../src/utils/actionUtils";
+import { NullMultiStateProvider } from "../src/stateProvider";
 
 jest.mock("../src/utils/actionUtils");
 
@@ -44,28 +44,24 @@ beforeAll(() => {
         }
     );
 
-    jest.spyOn(actionUtils, "stringToArray").mockImplementation(
-        (array) => {
-            const actualUtils = jest.requireActual("../src/utils/actionUtils");
-            return actualUtils.stringToArray(array);
-        }
-    );
+    jest.spyOn(actionUtils, "stringToArray").mockImplementation(array => {
+        const actualUtils = jest.requireActual("../src/utils/actionUtils");
+        return actualUtils.stringToArray(array);
+    });
 
     jest.spyOn(actionUtils, "stringToArrayOfArray").mockImplementation(
-        (arrayOfArray) => {
+        arrayOfArray => {
             const actualUtils = jest.requireActual("../src/utils/actionUtils");
             return actualUtils.stringToArray(arrayOfArray);
         }
     );
 
     jest.spyOn(actionUtils, "arrayOfArrayToString").mockImplementation(
-        (arrayOfArray) => {
+        arrayOfArray => {
             const actualUtils = jest.requireActual("../src/utils/actionUtils");
             return actualUtils.arrayOfArrayToString(arrayOfArray);
         }
     );
-
-
 });
 
 beforeEach(() => {
@@ -85,8 +81,8 @@ afterEach(() => {
 });
 
 test("restore with no cache found", async () => {
-    const paths = [ ["node_modules"], ["node_modules_path2"]];
-    const keys = [ "node-test", "node-test-2" ];
+    const paths = [["node_modules"], ["node_modules_path2"]];
+    const keys = ["node-test", "node-test-2"];
     testUtils.setMultiInputs({
         paths: paths,
         multiKeys: keys
@@ -107,7 +103,10 @@ test("restore with no cache found", async () => {
     expect(restoreCacheMock).toHaveBeenCalledWith(paths[0], keys[0], []);
     expect(restoreCacheMock).toHaveBeenCalledWith(paths[1], keys[1], []);
 
-    expect(outputMock).toHaveBeenCalledWith("cache-primary-keys", JSON.stringify(keys));
+    expect(outputMock).toHaveBeenCalledWith(
+        "cache-primary-keys",
+        JSON.stringify(keys)
+    );
     expect(outputMock).toHaveBeenCalledTimes(1);
     expect(failedMock).toHaveBeenCalledTimes(0);
 
@@ -121,9 +120,9 @@ test("restore with no cache found", async () => {
 });
 
 test("restore with restore keys and no cache found", async () => {
-    const paths = [ ["node_modules"], ["node_modules_path2"]];
-    const keys = [ "node-test", "node-test-2" ];
-    const restoreKeys = [[ "node-" ], ["node-test-2-"]];
+    const paths = [["node_modules"], ["node_modules_path2"]];
+    const keys = ["node-test", "node-test-2"];
+    const restoreKeys = [["node-"], ["node-test-2-"]];
     testUtils.setMultiInputs({
         paths: paths,
         multiKeys: keys,
@@ -142,24 +141,37 @@ test("restore with restore keys and no cache found", async () => {
     await run();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(2);
-    expect(restoreCacheMock).toHaveBeenCalledWith(paths[0], keys[0], restoreKeys[0]);
-    expect(restoreCacheMock).toHaveBeenCalledWith(paths[1], keys[1], restoreKeys[1]);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        paths[0],
+        keys[0],
+        restoreKeys[0]
+    );
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        paths[1],
+        keys[1],
+        restoreKeys[1]
+    );
 
-    expect(outputMock).toHaveBeenCalledWith("cache-primary-keys", JSON.stringify(keys));
+    expect(outputMock).toHaveBeenCalledWith(
+        "cache-primary-keys",
+        JSON.stringify(keys)
+    );
     expect(failedMock).toHaveBeenCalledTimes(0);
 
     expect(infoMock).toHaveBeenCalledTimes(2);
     expect(infoMock).toHaveBeenCalledWith(
-        `Cache not found for input keys: ${keys[0]}, ${restoreKeys[0]}`);
+        `Cache not found for input keys: ${keys[0]}, ${restoreKeys[0]}`
+    );
     expect(infoMock).toHaveBeenCalledWith(
-        `Cache not found for input keys: ${keys[1]}, ${restoreKeys[1]}`);
+        `Cache not found for input keys: ${keys[1]}, ${restoreKeys[1]}`
+    );
 
     restoreCacheMock.mockReset();
 });
 
 test("restore with cache found for key", async () => {
-    const paths = [ ["node_modules"], ["node_modules_path2"]];
-    const keys = [ "node-test", "node-test-2" ];
+    const paths = [["node_modules"], ["node_modules_path2"]];
+    const keys = ["node-test", "node-test-2"];
     testUtils.setMultiInputs({
         paths: paths,
         multiKeys: keys
@@ -167,7 +179,7 @@ test("restore with cache found for key", async () => {
 
     const infoMock = jest.spyOn(core, "info");
     const failedMock = jest.spyOn(core, "setFailed");
-    const outputMock = jest.spyOn(core, "setOutput")
+    const outputMock = jest.spyOn(core, "setOutput");
     let i = 0;
     const restoreCacheMock = jest
         .spyOn(cache, "restoreCache")
@@ -182,23 +194,32 @@ test("restore with cache found for key", async () => {
     expect(restoreCacheMock).toHaveBeenCalledWith(paths[1], keys[1], []);
 
     expect(outputMock).toHaveBeenCalledTimes(3);
-    expect(outputMock).toHaveBeenCalledWith("cache-primary-keys", JSON.stringify(keys));
-    expect(outputMock).toHaveBeenCalledWith("cache-hits", JSON.stringify([true, true]));
-    expect(outputMock).toHaveBeenCalledWith("cache-matched-keys", JSON.stringify(keys));
-
+    expect(outputMock).toHaveBeenCalledWith(
+        "cache-primary-keys",
+        JSON.stringify(keys)
+    );
+    expect(outputMock).toHaveBeenCalledWith(
+        "cache-hits",
+        JSON.stringify([true, true])
+    );
+    expect(outputMock).toHaveBeenCalledWith(
+        "cache-matched-keys",
+        JSON.stringify(keys)
+    );
 
     expect(infoMock).toHaveBeenCalledTimes(1);
-    expect(infoMock).toHaveBeenCalledWith(`Cache(s) restored from keys: \n${JSON.stringify(keys)}`);
+    expect(infoMock).toHaveBeenCalledWith(
+        `Cache(s) restored from keys: \n${JSON.stringify(keys)}`
+    );
     expect(failedMock).toHaveBeenCalledTimes(0);
 
     restoreCacheMock.mockReset();
-
 });
 
 test("restore with cache found for restore key", async () => {
     const paths = [["node_modules"], ["node_modules_path2"]];
-    const keys = [ "node-test", "node-test-2" ];
-    const restoreKeys = [[ "node-" ], ["node-test-2-"]];
+    const keys = ["node-test", "node-test-2"];
+    const restoreKeys = [["node-"], ["node-test-2-"]];
     testUtils.setMultiInputs({
         paths: paths,
         multiKeys: keys,
@@ -218,21 +239,39 @@ test("restore with cache found for restore key", async () => {
     await run();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(2);
-    expect(restoreCacheMock).toHaveBeenCalledWith(paths[0], keys[0], restoreKeys[0]);
-    expect(restoreCacheMock).toHaveBeenCalledWith(paths[1], keys[1], restoreKeys[1]);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        paths[0],
+        keys[0],
+        restoreKeys[0]
+    );
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        paths[1],
+        keys[1],
+        restoreKeys[1]
+    );
 
     expect(outputMock).toHaveBeenCalledTimes(3);
-    expect(outputMock).toHaveBeenCalledWith("cache-primary-keys", JSON.stringify(keys));
-    expect(outputMock).toHaveBeenCalledWith("cache-hits", JSON.stringify([false, false]));
-    expect(outputMock).toHaveBeenCalledWith("cache-matched-keys", JSON.stringify([restoreKeys[0][0],restoreKeys[1][0]]));
-
+    expect(outputMock).toHaveBeenCalledWith(
+        "cache-primary-keys",
+        JSON.stringify(keys)
+    );
+    expect(outputMock).toHaveBeenCalledWith(
+        "cache-hits",
+        JSON.stringify([false, false])
+    );
+    expect(outputMock).toHaveBeenCalledWith(
+        "cache-matched-keys",
+        JSON.stringify([restoreKeys[0][0], restoreKeys[1][0]])
+    );
 
     expect(infoMock).toHaveBeenCalledTimes(1);
     expect(infoMock).toHaveBeenCalledWith(
-        `Cache(s) restored from keys: \n${JSON.stringify([restoreKeys[0][0], restoreKeys[1][0]])}`
+        `Cache(s) restored from keys: \n${JSON.stringify([
+            restoreKeys[0][0],
+            restoreKeys[1][0]
+        ])}`
     );
     expect(failedMock).toHaveBeenCalledTimes(0);
 
     restoreCacheMock.mockReset();
-
 });

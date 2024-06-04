@@ -2,13 +2,10 @@
 
 This action allows caching dependencies and build outputs to improve workflow execution time.
 
-In addition to this `cache` action, three other actions are also available
-
-* [Restore action](./restore/README.md)
-
-* [Save action](./save/README.md)
-
-[RestoreMulti action](./restoremulti/README.md)
+>In addition to this `cache` action, three other actions are also available
+>* [Restore action](./restore/README.md)
+>* [Save action](./save/README.md)
+>* [RestoreMulti action](./restoremulti/README.md)
 
 [![Tests](https://github.com/actions/cache/actions/workflows/workflow.yml/badge.svg)](https://github.com/actions/cache/actions/workflows/workflow.yml)
 
@@ -17,6 +14,11 @@ In addition to this `cache` action, three other actions are also available
 See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows).
 
 ## What's New
+
+### v4
+
+* Updated to node 20
+* Added a `save-always` flag to save the cache even if a prior step fails
 
 ### v3
 
@@ -29,7 +31,7 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 * Fixed cache not working with github workspace directory or current directory.
 * Fixed the download stuck problem by introducing a timeout of 1 hour for cache downloads.
 * Fix zstd not working for windows on gnu tar in issues.
-* Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MINS`. Default is 60 minutes.
+* Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MINS`. Default is 10 minutes.
 * New actions are available for granular control over caches - [restore](restore/action.yml) and [save](save/action.yml).
 * Support cross-os caching as an opt-in feature. See [Cross OS caching](./tips-and-workarounds.md#cross-os-cache) for more info.
 * Added option to fail job on cache miss. See [Exit workflow on cache miss](./restore/README.md#exit-workflow-on-cache-miss) for more info.
@@ -56,11 +58,11 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
 * `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: `false`
 * `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
-* `lookup-only` - Skip downloading cache. Only check if cache entry exists. Default: `false`
+* `lookup-only` - If true, only checks if cache entry exists and skips download. Does not change save cache behavior. Default: `false`
 
 #### Environment Variables
 
-* `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cache-segment-restore-timeout)
+* `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `10`) to abort download of the segment if not completed in the defined number of minutes. [Read more](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cache-segment-restore-timeout)
 
 ### Outputs
 
@@ -94,7 +96,7 @@ jobs:
 
     - name: Cache Primes
       id: cache-primes
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: prime-numbers
         key: ${{ runner.os }}-primes
@@ -125,7 +127,7 @@ jobs:
 
     - name: Restore cached Primes
       id: cache-primes-restore
-      uses: actions/cache/restore@v3
+      uses: actions/cache/restore@v4
       with:
         path: |
           path/to/dependencies
@@ -136,7 +138,7 @@ jobs:
     .
     - name: Save Primes
       id: cache-primes-save
-      uses: actions/cache/save@v3
+      uses: actions/cache/save@v4
       with:
         path: |
           path/to/dependencies
@@ -190,7 +192,7 @@ A cache key can include any of the contexts, functions, literals, and operators 
 For example, using the [`hashFiles`](https://docs.github.com/en/actions/learn-github-actions/expressions#hashfiles) function allows you to create a new cache when dependencies change.
 
 ```yaml
-  - uses: actions/cache@v3
+  - uses: actions/cache@v4
     with:
       path: |
         path/to/dependencies
@@ -208,7 +210,7 @@ Additionally, you can use arbitrary command output in a cache key, such as a dat
       echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
     shell: bash
 
-  - uses: actions/cache@v3
+  - uses: actions/cache@v4
     with:
       path: path/to/dependencies
       key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('**/lockfiles') }}
@@ -230,7 +232,7 @@ Example:
 steps:
   - uses: actions/checkout@v3
 
-  - uses: actions/cache@v3
+  - uses: actions/cache@v4
     id: cache
     with:
       path: path/to/dependencies
@@ -262,7 +264,7 @@ jobs:
 
       - name: Cache Primes
         id: cache-primes
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: prime-numbers
           key: primes
@@ -273,7 +275,7 @@ jobs:
 
       - name: Cache Numbers
         id: cache-numbers
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: numbers
           key: primes
@@ -289,7 +291,7 @@ jobs:
 
       - name: Cache Primes
         id: cache-primes
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: prime-numbers
           key: primes
